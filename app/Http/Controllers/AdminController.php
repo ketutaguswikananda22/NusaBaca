@@ -69,6 +69,6 @@ public function index()
     ]);
 
     return redirect()->back()->with('success', 'Laporan Anda telah dikirim.');
-}
+    }
 
 }

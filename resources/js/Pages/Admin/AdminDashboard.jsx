@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { router, Link } from '@inertiajs/react';
 import DarkModeToggle from '@/Components/DarkModeToggle';
+import Swal from 'sweetalert2';
 
 
 export default function AdminDashboard({ 
@@ -14,6 +15,26 @@ export default function AdminDashboard({
     fileInputRef,
     currentTime 
 }) {
+
+    const handleUnban = (id, name) => {
+        Swal.fire({
+            title: 'Pulihkan Akun?',
+            text: `Apakah Anda yakin ingin mengaktifkan kembali akun ${name}?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#10b981',
+            confirmButtonText: 'Ya, Pulihkan!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                router.patch(route('admin.users.unban', id), {}, {
+                    preserveScroll: true,
+                    onSuccess: () => Swal.fire('Berhasil!', 'Akun telah diaktifkan kembali.', 'success')
+                });
+            }
+        });
+    };
+
     return (
         <div className="max-w-7xl mx-auto p-4 sm:p-10 relative z-10">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -121,7 +142,7 @@ export default function AdminDashboard({
                 </div>
 
                 {/* 7. Author Management List */}
-                <div className={`md:col-span-2 md:row-span-2 ${theme?.card} rounded-[3rem] p-8 border flex flex-col min-h-[500px]`}>
+               <div className={`md:col-span-2 md:row-span-2 ${theme?.card} rounded-[3rem] p-8 border flex flex-col min-h-[500px]`}>
                     <div className="flex justify-between items-center mb-8">
                         <h4 className="text-sm font-black uppercase tracking-tighter italic">Author<span className="text-[#ff6122] italic"> Management</span></h4>
                         <div className="bg-indigo-500/10 text-indigo-500 px-4 py-1 rounded-full border border-indigo-500/20 text-[10px] font-black">
@@ -145,19 +166,38 @@ export default function AdminDashboard({
                                             <span className={`text-[7px] font-bold uppercase tracking-widest ${author.is_online ? 'text-green-500' : 'text-neutral-500'}`}>
                                                 {author.is_online ? '• Online' : '• Offline'}
                                             </span>
+                                            {/* Label tambahan jika kena Banned sistem */}
+                                            {author.is_banned && (
+                                                <span className="text-[7px] font-black bg-red-500 text-white px-2 py-0.5 rounded-md uppercase animate-pulse">
+                                                    Banned
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
-                                <button 
-                                    onClick={() => router.post(route('admin.users.toggle', author.id))} 
-                                    className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${
-                                        author.status === 'active' 
-                                        ? 'text-red-500 hover:bg-red-500 hover:text-white' 
-                                        : 'text-green-500 hover:bg-green-500 hover:text-white'
-                                    }`}
-                                >
-                                    {author.status === 'active' ? 'Suspend' : 'Activate'}
-                                </button>
+                                
+                                {/* Logika Tombol Aksi */}
+                                <div className="flex items-center gap-2">
+                                    {author.is_banned ? (
+                                        <button 
+                                            onClick={() => handleUnban(author.id, author.name)} 
+                                            className="px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all bg-green-500 text-white hover:bg-green-600 shadow-lg shadow-green-500/20"
+                                        >
+                                            Unban
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            onClick={() => router.post(route('admin.users.toggle', author.id))} 
+                                            className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${
+                                                author.status === 'active' 
+                                                ? 'text-red-500 hover:bg-red-500 hover:text-white border border-red-500/10' 
+                                                : 'text-green-500 hover:bg-green-500 hover:text-white border border-green-500/10'
+                                            }`}
+                                        >
+                                            {author.status === 'active' ? 'Suspend' : 'Activate'}
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>
