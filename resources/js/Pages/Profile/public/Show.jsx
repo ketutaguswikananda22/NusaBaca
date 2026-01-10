@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link, useForm } from '@inertiajs/react';
+import Swal from 'sweetalert2';
 
 export default function Show({ auth, author: initialAuthor, books, conversations }) {
+
     const [activeTab, setActiveTab] = useState('perihal');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     
     const [author, setAuthor] = useState(initialAuthor);
 
     const isFollowing = author.is_followed ?? author.followers?.some(follower => follower.id === auth.user.id);
+
+    const [showReportModal, setShowReportModal] = useState(false);
 
     const { post: followPost, processing: followProcessing } = useForm();
     const [replyingTo, setReplyingTo] = useState(null); 
@@ -29,6 +33,46 @@ export default function Show({ auth, author: initialAuthor, books, conversations
     const { data, setData, post, processing, reset, errors } = useForm({
         message: '',
     });
+
+    const { data: reportData, setData: setReportData, post: postReport, processing: reporting, reset: resetReport } = useForm({
+        user_id: auth.user.id, // Pelapor
+        reported_author_id: author.id, // Penulis yang dilaporkan
+        reason: '',
+        description: '',
+    });
+
+    const handleReportSubmit = (e) => {
+        e.preventDefault();
+
+        postReport(route('reports.user'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowReportModal(false);
+                resetReport();
+                
+                // Alert Sukses yang Keren
+                Swal.fire({
+                    title: 'Laporan Terkirim',
+                    text: 'Terima kasih, laporan Anda akan segera kami tinjau.',
+                    icon: 'success',
+                    background: '#ffffff',
+                    confirmButtonColor: '#ef4444', // Warna merah (sesuai tema lapor)
+                    customClass: {
+                        popup: 'rounded-[30px]',
+                        confirmButton: 'rounded-full px-8 py-3 text-[10px] font-black uppercase tracking-widest'
+                    }
+                });
+            },
+            onError: () => {
+                Swal.fire({
+                    title: 'Waduh!',
+                    text: 'Sepertinya ada masalah teknis. Coba lagi nanti ya.',
+                    icon: 'error',
+                    confirmButtonColor: '#6366f1'
+                });
+            }
+        });
+    };
 
     const submitMessage = (e) => {
         e.preventDefault();
@@ -89,32 +133,62 @@ export default function Show({ auth, author: initialAuthor, books, conversations
                                             <i className="fas fa-ellipsis-v text-neutral-400"></i>
                                         </button>
 
-                                        {isMenuOpen && (
-                                            <>
-                                                <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)}></div>
-                                                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-neutral-100 py-3 z-50 animate-in fade-in zoom-in-95 duration-200">
-                                                    <button className="w-full text-left px-5 py-2.5 text-[11px] font-bold uppercase text-neutral-600 hover:bg-neutral-50 flex items-center gap-3">
-                                                        <i className="fas fa-volume-mute w-4"></i> Mute
-                                                    </button>
-                                                    <button className="w-full text-left px-5 py-2.5 text-[11px] font-bold uppercase text-red-500 hover:bg-red-50 flex items-center gap-3">
-                                                        <i className="fas fa-ban w-4"></i> Block
-                                                    </button>
-                                                    <button className="w-full text-left px-5 py-2.5 text-[11px] font-bold uppercase text-neutral-600 hover:bg-neutral-50 flex items-center gap-3">
-                                                        <i className="fas fa-flag w-4"></i> Laporkan
-                                                    </button>
-                                                    <div className="my-2 border-t border-neutral-50"></div>
-                                                    <Link href="#" className="block px-5 py-2.5 text-[10px] font-black uppercase text-neutral-400 hover:text-orange-500 tracking-tighter">
-                                                        Kode Etik
-                                                    </Link>
-                                                    <Link href="#" className="block px-5 py-2.5 text-[10px] font-black uppercase text-neutral-400 hover:text-orange-500 tracking-tighter">
-                                                        Kebijakan Nusabaca
-                                                    </Link>
-                                                    <Link href="#" className="block px-5 py-2.5 text-[10px] font-black uppercase text-neutral-400 hover:text-orange-500 tracking-tighter">
-                                                        Portal Keamanan
-                                                    </Link>
-                                                </div>
-                                            </>
-                                        )}
+                                      {isMenuOpen && (
+                                      <>
+                                        {/* Overlay transparan untuk menutup menu saat klik di luar area menu */}
+                                        <div 
+                                          className="fixed inset-0 z-[50]" 
+                                          onClick={() => setIsMenuOpen(false)} 
+                                        />
+                                    
+                                        <div 
+                                          role="menu"
+                                          className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-neutral-100 py-3 z-[60] animate-in fade-in zoom-in-95 duration-200"
+                                        >
+                                          {/* Menu Item: Mute */}
+                                          <button 
+                                            className="w-full text-left px-5 py-2.5 text-[11px] font-bold uppercase text-neutral-600 hover:bg-neutral-50 flex items-center gap-3 transition-colors"
+                                            onClick={() => { /* Logika Mute */; setIsMenuOpen(false); }}
+                                          >
+                                            <i className="fas fa-volume-mute w-4"></i> Mute
+                                          </button>
+                                                                        
+                                          {/* Menu Item: Block */}
+                                          <button 
+                                            className="w-full text-left px-5 py-2.5 text-[11px] font-bold uppercase text-red-500 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                                            onClick={() => { /* Logika Block */; setIsMenuOpen(false); }}
+                                          >
+                                            <i className="fas fa-ban w-4"></i> Block
+                                          </button>
+                                                                        
+                                          {/* Menu Item: Report */}
+                                          <button 
+                                            type="button" 
+                                            onClick={(e) => {
+                                              e.stopPropagation(); 
+                                              setIsMenuOpen(false);
+                                              setShowReportModal(true); 
+                                            }} 
+                                            className="w-full text-left px-5 py-2.5 text-[11px] font-bold uppercase text-neutral-600 hover:bg-neutral-50 flex items-center gap-3 transition-colors"
+                                          >
+                                            <i className="fas fa-flag w-4"></i> Laporkan
+                                          </button>
+                                        
+                                          <div className="my-2 border-t border-neutral-50"></div>
+                                        
+                                          {/* Links Section */}
+                                          {['Kode Etik', 'Kebijakan Nusabaca', 'Portal Keamanan'].map((text) => (
+                                            <Link 
+                                              key={text}
+                                              href="#" 
+                                              className="block px-5 py-2.5 text-[10px] font-black uppercase text-neutral-400 hover:text-orange-500 tracking-tighter transition-colors"
+                                            >
+                                              {text}
+                                            </Link>
+                                          ))}
+                                        </div>
+                                      </>
+                                    )}
                                     </div>
                                 </>
                             )}
@@ -341,6 +415,60 @@ export default function Show({ auth, author: initialAuthor, books, conversations
                                     </div>
                                 </div>
                             )}
+
+                            {/* --- MODAL LAPORAN --- */}
+                            {showReportModal && (
+                                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                                    <div className="bg-white w-full max-w-md rounded-[35px] p-10 shadow-2xl animate-in zoom-in-95 duration-200">
+                                        <h3 className="text-xl font-black text-neutral-800 uppercase italic mb-2">
+                                            Laporkan <span className="text-red-500">Profil</span>
+                                        </h3>
+                                        <p className="text-xs text-neutral-400 font-bold uppercase tracking-widest mb-8">
+                                            Beritahu kami apa yang terjadi pada profil {author.name}
+                                        </p>
+                                                    
+                                        <form onSubmit={handleReportSubmit} className="space-y-4">
+                                            <select 
+                                                className="w-full bg-neutral-50 border-none rounded-2xl p-4 text-xs font-bold uppercase tracking-wider focus:ring-2 focus:ring-red-500/20"
+                                                value={reportData.reason}
+                                                onChange={e => setReportData('reason', e.target.value)}
+                                                required
+                                            >
+                                                <option value="">Pilih Alasan</option>
+                                                <option value="Inappropriate Content">Konten Tidak Pantas</option>
+                                                <option value="Harassment">Pelecehan/Bullying</option>
+                                                <option value="Spam">Spam</option>
+                                                <option value="Impersonation">Penyamaran Identitas</option>
+                                            </select>
+                                                    
+                                            <textarea 
+                                                className="w-full bg-neutral-50 border-none rounded-3xl p-5 text-sm font-medium focus:ring-2 focus:ring-red-500/20 min-h-[120px]"
+                                                placeholder="Detail tambahan (opsional)..."
+                                                value={reportData.description}
+                                                onChange={e => setReportData('description', e.target.value)}
+                                            />
+                            
+                                            <div className="flex gap-3 pt-4">
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => setShowReportModal(false)}
+                                                    className="flex-1 py-4 text-[10px] bg-neutral-100 rounded-full font-black uppercase tracking-widest text-neutral-400 hover:bg-neutral-200 transition-colors"
+                                                >
+                                                    Batal
+                                                </button>
+                                                <button 
+                                                    type="submit"
+                                                    disabled={reporting}
+                                                    className="flex-1 py-4 text-[10px] bg-red-500 rounded-full font-black uppercase tracking-widest text-white hover:bg-red-600 transition-colors disabled:opacity-50 shadow-lg shadow-red-100"
+                                                >
+                                                    {reporting ? 'MENGIRIM...' : 'KIRIM LAPORAN'}
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            )}
+
                         </div>
                     </div>
                 </div>

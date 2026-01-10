@@ -88,6 +88,9 @@ export default function AuthenticatedLayout({ header, children }) {
                                         <NavLink href={route('admin.writer.applications')} active={route().current('admin.writer.applications')}>
                                             Persetujuan Penulis
                                         </NavLink>
+                                        <NavLink href={route('admin.reports.index')} active={route().current('admin.reports.index')}>
+                                            Management Laporan
+                                        </NavLink>
                                     </>
                                 )}
                             </div>

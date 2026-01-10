@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\WriterApplication;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\Report;
 
 class AdminController extends Controller
 {
@@ -52,4 +53,22 @@ public function index()
         return inertia('Admin/Moderation', [
         ]);
     }
+
+    public function storeReport(Request $request)
+{
+    $request->validate([
+        'book_id' => 'required|exists:books,id',
+        'reason' => 'required|string',
+    ]);
+
+    Report::create([
+        'user_id' => auth()->id(),
+        'book_id' => $request->book_id,
+        'reason' => $request->reason,
+        'description' => $request->description,
+    ]);
+
+    return redirect()->back()->with('success', 'Laporan Anda telah dikirim.');
+}
+
 }

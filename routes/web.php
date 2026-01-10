@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Laravel\Socialite\Facades\Socialite;
+use App\Http\Controllers\ReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -105,6 +106,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [BookController::class, 'index'])->name('dashboard');
     Route::get('/library', [DashboardController::class, 'library'])->name('library.index');
     Route::post('/library/toggle/{bookId}', [LibraryController::class, 'toggle'])->name('library.toggle');
+    //report
+    Route::post('/reports', [ReportController::class, 'store'])->name('reports.user');
 
     // --- Book Management (CRUD) ---
     Route::get('/karya-saya', [BookController::class, 'myWorks'])->name('author.books');
@@ -143,25 +146,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/user/{id}/conversation', [ProfileController::class, 'storeConversation'])->name('conversation.store');
 
     // --- Admin Routes (DIBERSIHKAN DAN DIATUR ULANG) ---
-    Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
-        // 1. Dashboard Utama (Statistik)
-        Route::get('/', [App\Http\Controllers\AdminController::class, 'index'])->name('admin.index');
+    // --- Admin Routes (VERSI FIX) ---
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    
+    // 1. Dashboard Utama
+    // Sekarang namanya jadi 'admin.index'
+    Route::get('/', [App\Http\Controllers\AdminController::class, 'index'])->name('index');
 
-        // 2. Moderasi Buku (Pindahkan logika ControlCenter.jsx ke sini)
-        Route::get('/moderation', [App\Http\Controllers\AdminController::class, 'moderationIndex'])->name('admin.moderation');
-        Route::post('/books/{id}/approve', [BookController::class, 'approve'])->name('admin.books.approve');
-        Route::delete('/books/{id}/reject', [BookController::class, 'destroy'])->name('admin.books.reject');
+    // 2. Report Management
+    // Sekarang namanya jadi 'admin.reports.index', 'admin.reports.destroy', dll.
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::delete('/reports/{id}', [ReportController::class, 'destroy'])->name('reports.destroy');
+    Route::patch('/reports/{id}', [ReportController::class, 'update'])->name('reports.update');
+    
+    // 3. Moderasi Buku
+    Route::get('/moderation', [App\Http\Controllers\AdminController::class, 'moderationIndex'])->name('moderation');
+    Route::post('/books/{id}/approve', [BookController::class, 'approve'])->name('books.approve');
+    Route::delete('/books/{id}/reject', [BookController::class, 'destroy'])->name('books.reject');
 
-        // 3. Manajemen Genre (Halaman baru)
-        Route::get('/genres', [App\Http\Controllers\GenreController::class, 'index'])->name('admin.genres.index');
-        Route::post('/genres', [App\Http\Controllers\GenreController::class, 'store'])->name('genres.store');
-        Route::patch('/genres/{genre}', [App\Http\Controllers\GenreController::class, 'update'])->name('genres.update');
-        Route::delete('/genres/{genre}', [App\Http\Controllers\GenreController::class, 'destroy'])->name('genres.destroy');
+    // 4. Manajemen Genre
+    Route::get('/genres', [App\Http\Controllers\GenreController::class, 'index'])->name('genres.index');
+    Route::post('/genres', [App\Http\Controllers\GenreController::class, 'store'])->name('genres.store');
+    Route::patch('/genres/{genre}', [App\Http\Controllers\GenreController::class, 'update'])->name('genres.update');
+    Route::delete('/genres/{genre}', [App\Http\Controllers\GenreController::class, 'destroy'])->name('genres.destroy');
 
-        // 4. Manajemen User & Penulis
-        Route::get('/writer-applications', [WriterApplicationController::class, 'adminIndex'])->name('admin.writer.applications');
-        Route::post('/writer-applications/{id}', [WriterApplicationController::class, 'updateStatus'])->name('admin.writer.updateStatus');
-        Route::post('/users/{id}/toggle', [App\Http\Controllers\AdminController::class, 'toggleUserStatus'])->name('admin.users.toggle');
+    // 5. Manajemen User & Penulis
+    Route::get('/writer-applications', [WriterApplicationController::class, 'adminIndex'])->name('writer.applications');
+    Route::post('/writer-applications/{id}', [WriterApplicationController::class, 'updateStatus'])->name('writer.updateStatus');
+    Route::post('/users/{id}/toggle', [App\Http\Controllers\AdminController::class, 'toggleUserStatus'])->name('users.toggle');
     });
 });
 
