@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { router } from '@inertiajs/react';
+import { router, Link } from '@inertiajs/react';
 import DarkModeToggle from '@/Components/DarkModeToggle';
+
 
 export default function AdminDashboard({ 
     user = {}, 
@@ -36,12 +37,26 @@ export default function AdminDashboard({
                     <p className="text-[9px] bg-indigo-500 px-4 py-1.5 rounded-full border border-indigo-400 text-white font-bold uppercase tracking-[0.2em] mt-3">
                         Admin Center
                     </p>
+                    <div className="w-full space-y-2 pt-4 border-t border-neutral-100 dark:border-white/5">
+                        <Link 
+                            href={route('admin.genres.index')}
+                            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] font-black uppercase transition-all shadow-lg shadow-indigo-500/20"
+                        >
+                            Manage Genres
+                        </Link>
+                        <Link 
+                            href={route('admin.moderation')}
+                            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 text-neutral-500 dark:text-neutral-400 text-[10px] font-black uppercase transition-all"
+                        >
+                            Moderation
+                        </Link>
+                    </div>
                 </div>
 
                 {/* 2. Header Welcome */}
                 <div className={`md:col-span-3 ${theme?.card} rounded-[2.5rem] p-10 border flex flex-col md:flex-row items-center justify-between gap-6`}>
                     <h3 className="text-3xl font-medium leading-tight italic uppercase tracking-tighter text-center md:text-left">
-                        nusabaca management <span className="text-indigo-500 font-black">ecosystem</span>
+                        nusabaca management<span className="text-indigo-500 font-black">ecosystem</span>
                     </h3>
                     <DarkModeToggle autoDarkSetting={user?.auto_dark} />
                 </div>

@@ -46,4 +46,10 @@ public function index()
 
         return back();
     }
+
+    public function moderationIndex()
+    {
+        return inertia('Admin/Moderation', [
+        ]);
+    }
 }

@@ -7,8 +7,8 @@ export default function GuestLayout({ children }) {
             <div>
                 <Link href="/" className="flex items-center gap-2 group">
                     <ApplicationLogo className="h-10 w-auto group-hover:scale-105 transition-all" />
-                    <span className="text-slate-900 font-black text-xl tracking-tighter hidden md:block">
-                        Nusa<span className="text-indigo-600">Baca</span>
+                    <span className="text-white font-black text-xl tracking-tighter hidden md:block">
+                        Nusa<span className="text-[#ff6122]">Baca</span>
                     </span>
                 </Link>
             </div>

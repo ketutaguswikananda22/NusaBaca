@@ -125,21 +125,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/join-writer', [WriterApplicationController::class, 'index'])->name('writer.join');
     Route::post('/join-writer', [WriterApplicationController::class, 'store'])->name('writer.store');
 
-    // --- Profile Management (Pembaruan Fitur Edit) ---
+    // --- Profile Management ---
     Route::controller(ProfileController::class)->group(function () {
         Route::get('/profile', 'edit')->name('profile.edit');
         Route::patch('/profile', 'update')->name('profile.update');
         Route::delete('/profile', 'destroy')->name('profile.destroy');
-        
-        // Custom Update untuk Avatar & Background
         Route::post('/profile/avatar', 'updateAvatar')->name('profile.avatar.update');
         Route::delete('/profile/avatar', 'destroyAvatar')->name('profile.avatar.destroy');
-        
-        // Route untuk update profile lengkap (name, bio, bg_color, dll) dari komponen React
         Route::post('/profile/update-full', 'updateFullProfile')->name('profile.update.full');
-        Route::post('/profile/follow/{user}', [ProfileController::class, 'follow'])->name('profile.follow');
-        Route::post('/profile/unfollow/{user}', [ProfileController::class, 'unfollow'])->name('profile.unfollow');
-
+        Route::post('/profile/follow/{user}', 'follow')->name('profile.follow');
+        Route::post('/profile/unfollow/{user}', 'unfollow')->name('profile.unfollow');
     });
 
     // --- Social Interactions ---
@@ -147,14 +142,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/unfollow/{id}', [ProfileController::class, 'unfollow'])->name('unfollow.action');
     Route::post('/user/{id}/conversation', [ProfileController::class, 'storeConversation'])->name('conversation.store');
 
-   // --- Admin Routes ---
+    // --- Admin Routes (DIBERSIHKAN DAN DIATUR ULANG) ---
     Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
+        // 1. Dashboard Utama (Statistik)
         Route::get('/', [App\Http\Controllers\AdminController::class, 'index'])->name('admin.index');
+
+        // 2. Moderasi Buku (Pindahkan logika ControlCenter.jsx ke sini)
+        Route::get('/moderation', [App\Http\Controllers\AdminController::class, 'moderationIndex'])->name('admin.moderation');
+        Route::post('/books/{id}/approve', [BookController::class, 'approve'])->name('admin.books.approve');
+        Route::delete('/books/{id}/reject', [BookController::class, 'destroy'])->name('admin.books.reject');
+
+        // 3. Manajemen Genre (Halaman baru)
+        Route::get('/genres', [App\Http\Controllers\GenreController::class, 'index'])->name('admin.genres.index');
+        Route::post('/genres', [App\Http\Controllers\GenreController::class, 'store'])->name('genres.store');
+        Route::patch('/genres/{genre}', [App\Http\Controllers\GenreController::class, 'update'])->name('genres.update');
+        Route::delete('/genres/{genre}', [App\Http\Controllers\GenreController::class, 'destroy'])->name('genres.destroy');
+
+        // 4. Manajemen User & Penulis
         Route::get('/writer-applications', [WriterApplicationController::class, 'adminIndex'])->name('admin.writer.applications');
         Route::post('/writer-applications/{id}', [WriterApplicationController::class, 'updateStatus'])->name('admin.writer.updateStatus');
-        Route::post('/books/{id}/approve', [BookController::class, 'approve'])->name('admin.books.approve');
         Route::post('/users/{id}/toggle', [App\Http\Controllers\AdminController::class, 'toggleUserStatus'])->name('admin.users.toggle');
-        Route::delete('/books/{id}/reject', [BookController::class, 'destroy'])->name('admin.books.reject');
     });
 });
 
