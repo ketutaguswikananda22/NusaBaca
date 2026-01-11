@@ -33,65 +33,89 @@ class ReportController extends Controller
 
 
     // --- FUNGSI UNTUK USER (Punya kamu yang tadi) ---
+   
     public function store(Request $request)
-    {
-        $request->validate([
-            'book_id' => 'nullable|exists:books,id', 
-            'reported_author_id' => 'nullable|exists:users,id',
-            'reason' => 'required|string|max:255',
-            'description' => 'nullable|string',
-        ]);
+{
+    $request->validate([
+        'book_id' => 'nullable|exists:books,id', 
+        'reported_author_id' => 'required|exists:users,id',
+        'reason' => 'required|string|max:255',
+        'description' => 'nullable|string',
+    ]);
 
-        Report::create([
-            'user_id' => Auth::id(),
-            'book_id' => $request->book_id,
-            'reported_user_id' => $request->reported_author_id,
-            'reason' => $request->reason,
-            'description' => $request->description,
-        ]);
+    // 1. Cek apakah user sudah pernah melaporkan PENULIS ini sebelumnya
+    $authorReported = Report::where('user_id', Auth::id())
+        ->where('reported_user_id', $request->reported_author_id)
+        ->exists();
 
-        Mail::to('nusabacaa@gmail.com')->send(new ReportNotification("Laporan Masuk Baru", "Ada laporan baru masuk ke sistem. Segera cek dashboard admin."));
-
-        return redirect()->back()->with('success', 'Laporan berhasil dikirim.');
+    if ($authorReported) {
+        return redirect()->back()->with('error', 'Anda sudah melaporkan akun penulis ini sebelumnya.');
     }
 
-    public function update(Request $request, $id)
-{
-    $report = Report::with(['user', 'reportedUser'])->findOrFail($id);
-    
-    // 1. Update Status Laporan
-    $report->update(['status' => $request->status]);
+    // 2. Cek apakah user sudah pernah melaporkan BUKU ini sebelumnya (jika ada book_id)
+    if ($request->book_id) {
+        $bookReported = Report::where('user_id', Auth::id())
+            ->where('book_id', $request->book_id)
+            ->exists();
 
-   if ($request->status === 'resolved') {
-    $penulis = $report->reportedUser;
-    $pelapor = $report->user;
-
-    // 2. Kirim Email ke Pelapor
-    Mail::to($pelapor->email)->send(new ReportNotification(
-        "Laporan Anda Selesai Ditinjau", 
-        "Halo {$pelapor->name}, laporan Anda terhadap {$penulis->name} telah kami tindak lanjuti."
-    ));
-
-    // 3. Kirim Email ke Penulis (Sertakan $report->reason sebagai parameter ke-3)
-    Mail::to($penulis->email)->send(new ReportNotification(
-        "Peringatan Akun", 
-        "Halo {$penulis->name}, akun Anda dilaporkan. Mohon patuhi pedoman komunitas.",
-        $report->reason 
-    ));
-
-        // 4. LOGIKA AUTO-BANNED (Jika sudah > 3 kali dilaporkan & resolved)
-        $jumlahPelanggaran = Report::where('reported_user_id', $penulis->id)
-                                    ->where('status', 'resolved')
-                                    ->count();
-
-        if ($jumlahPelanggaran >= 3) {
-            $penulis->update(['is_banned' => true]); // Pastikan ada kolom is_banned di tabel users
-            
-            // Email pemberitahuan Banned
-            Mail::to($penulis->email)->send(new ReportNotification("Akun Anda Ditangguhkan", "Akun Anda telah diblokir permanen karena telah menerima lebih dari 3 laporan valid."));
+        if ($bookReported) {
+            return redirect()->back()->with('error', 'Anda sudah melaporkan buku ini sebelumnya.');
         }
     }
 
-    return redirect()->back()->with('success', 'Tinjauan selesai dan email notifikasi telah dikirim.');
+    // Jika lolos dua pengecekan di atas, baru buat laporannya
+    Report::create([
+        'user_id' => Auth::id(),
+        'book_id' => $request->book_id,
+        'reported_user_id' => $request->reported_author_id,
+        'reason' => $request->reason,
+        'description' => $request->description,
+        'status' => 'pending', // Pastikan ada default status
+    ]);
+
+    @Mail::to('nusabacaa@gmail.com')->send(new ReportNotification("Laporan Masuk Baru", "Ada laporan baru masuk ke sistem."));
+
+    return redirect()->back()->with('success', 'Laporan berhasil dikirim.');
+}
+
+    public function update(Request $request, $id)
+{   
+    try {
+        $report = Report::findOrFail($id);
+
+        // Gunakan cara manual ini, lebih "galak" dan pasti masuk ke DB
+        $report->status = $request->status;
+        $report->save(); 
+
+        if ($request->status === 'resolved') {
+            // Kita ambil user terbaru dari DB supaya datanya segar
+            $penulis = \App\Models\User::find($report->reported_user_id);
+            $pelapor = \App\Models\User::find($report->user_id);
+
+            if ($penulis) {
+                // Notifikasi Email
+                @Mail::to($pelapor->email)->send(new ReportNotification("Laporan Selesai", "Laporan Anda ditindaklanjuti."));
+                @Mail::to($penulis->email)->send(new ReportNotification("Peringatan Akun", "Akun Anda dilaporkan.", $report->reason));
+
+                // Hitung total laporan resolved untuk user ini
+                $jumlahPelanggaran = Report::where('reported_user_id', $penulis->id)
+                                    ->where('status', 'resolved')
+                                    ->count();
+
+                    if ($jumlahPelanggaran >= 3) {
+                        $penulis->update([
+                            'is_banned' => true,
+                            'status'    => 'suspended'
+                        ]);
+                        @Mail::to($penulis->email)->send(new ReportNotification("Akun Ditangguhkan", "Akun diblokir karena >3 laporan valid."));
+                    }
+                }
+            }
+
+            return redirect()->back()->with('success', 'Status berhasil diperbarui!');
+
+            }   catch (\Exception $e) {
+                    return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 }

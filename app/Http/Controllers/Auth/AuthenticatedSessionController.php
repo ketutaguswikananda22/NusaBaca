@@ -27,17 +27,24 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+ public function store(LoginRequest $request): RedirectResponse
 {
     $request->authenticate();
 
-    if ($request->user()->status !== 'active') {
+    $user = $request->user();
+
+    // Cek apakah user kena ban (is_banned) ATAU statusnya bukan active
+    if ($user->is_banned || $user->status !== 'active') {
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        // Pastikan nama key di sini adalah 'error_suspended'
-        return redirect()->route('login')->with('error_suspended', 'Akun Anda telah ditangguhkan.');
+        // Gunakan pesan yang lebih jelas sesuai kondisi
+        $pesan = $user->is_banned 
+            ? 'Akun Anda telah ditangguhkan secara permanen karena melanggar ketentuan.' 
+            : 'Akun Anda sedang tidak aktif.';
+
+        return redirect()->route('login')->with('error_suspended', $pesan);
     }
 
     $request->session()->regenerate();

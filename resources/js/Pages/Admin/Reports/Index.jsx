@@ -51,21 +51,21 @@ export default function Index({ auth, reports }) {
                     status: newStatus 
                 }, {
                     preserveScroll: true,
-                    onSuccess: () => {
-                        // --- 3. Ganti Loading dengan Success ---
+                    // Memaksa Inertia mengambil ulang props 'reports' dari server
+                    only: ['reports', 'flash'], 
+                    onSuccess: (page) => {
                         Swal.fire({
                             icon: 'success',
                             title: 'Berhasil!',
-                            text: 'Status diperbarui dan email telah dikirim.',
+                            text: page.props.flash.success || 'Status diperbarui!',
                             confirmButtonColor: '#f97316',
                         });
                     },
                     onError: () => {
-                        // --- 4. Tampilkan Error jika gagal ---
                         Swal.fire({
                             icon: 'error',
-                            title: 'Gagal!',
-                            text: 'Terjadi kesalahan saat memproses laporan.',
+                            title: 'Oops!',
+                            text: 'Gagal memperbarui status.',
                             confirmButtonColor: '#ef4444',
                         });
                     }
@@ -123,6 +123,7 @@ export default function Index({ auth, reports }) {
                                             </td>
                                             <td className="py-4 text-center">
                                                 <select 
+                                                    key={`${report.id}-${report.status}`}
                                                     value={report.status} 
                                                     onChange={(e) => handleStatusChange(report.id, e.target.value)}
                                                     className={`text-[10px] font-black uppercase rounded-xl border-none focus:ring-2 focus:ring-orange-500 cursor-pointer transition-all ${

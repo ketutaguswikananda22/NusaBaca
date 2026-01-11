@@ -155,12 +155,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::delete('/reports/{id}', [ReportController::class, 'destroy'])->name('reports.destroy');
     Route::patch('/reports/{id}', [ReportController::class, 'update'])->name('reports.update');
-    Route::post('/admin/books/{id}/reject', [App\Http\Controllers\AdminController::class, 'rejectBook'])->name('admin.books.reject');
+    Route::post('/books/{id}/reject-action', [App\Http\Controllers\AdminController::class, 'rejectBook'])->name('books.reject.action');
     
     // 3. Moderasi Buku
     Route::get('/moderation', [App\Http\Controllers\AdminController::class, 'moderationIndex'])->name('moderation');
     Route::post('/books/{id}/approve', [BookController::class, 'approve'])->name('books.approve');
-    Route::delete('/books/{id}/reject', [BookController::class, 'destroy'])->name('books.reject');
+    //Route::delete('/books/{id}/reject', [BookController::class, 'destroy'])->name('books.reject');
 
     // 4. Manajemen Genre
     Route::get('/genres', [App\Http\Controllers\GenreController::class, 'index'])->name('genres.index');
@@ -172,6 +172,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/writer-applications', [WriterApplicationController::class, 'adminIndex'])->name('writer.applications');
     Route::post('/writer-applications/{id}', [WriterApplicationController::class, 'updateStatus'])->name('writer.updateStatus');
     Route::post('/users/{id}/toggle', [App\Http\Controllers\AdminController::class, 'toggleUserStatus'])->name('users.toggle');
+
+    // routes/web.php
+    Route::patch('/admin/users/{id}/unban', [App\Http\Controllers\AdminController::class, 'unban'])->name('admin.users.unban');
     });
 });
 

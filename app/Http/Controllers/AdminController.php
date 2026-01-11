@@ -68,10 +68,29 @@ public function index()
     }
 
     public function moderationIndex()
-    {
-        return inertia('Admin/Moderation', [
-        ]);
-    }
+{
+    // Ambil logika yang sama dengan index() untuk menampilkan buku pending
+    $books = Book::with('user')
+        ->where('status', 'pending')
+        ->latest()
+        ->get()
+        ->map(function ($book) {
+            return [
+                'id' => $book->id,
+                'title' => $book->title,
+                'description' => $book->description, 
+                'cover_path' => $book->cover_path ? asset('storage/' . $book->cover_path) : asset('images/default-cover.jpg'),
+                'user' => [
+                    'name' => $book->user->name ?? 'Anonim'
+                ],
+            ];
+        });
+
+    return Inertia::render('Admin/Moderation', [
+        'books' => $books,
+        'auth' => ['user' => auth()->user()]
+    ]);
+}
 
     public function storeReport(Request $request)
 {
@@ -109,5 +128,14 @@ public function index()
         }
 
         return back()->with('success', 'Buku telah ditolak dan email pemberitahuan dikirim.');
+    }
+    public function unban($id)
+    {
+        $user = User::findOrFail($id);
+        $user->update([
+            'is_banned' => false,
+            'status' => 'active'
+        ]);
+        return back();
     }
 }

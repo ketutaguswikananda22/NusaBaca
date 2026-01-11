@@ -75,7 +75,7 @@ export default function Moderation({ auth, books }) {
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                router.post(route('admin.books.reject', bookId), {
+                router.post(route('admin.books.reject.action', bookId), {
                     reason: result.value
                 }, {
                     onSuccess: () => {

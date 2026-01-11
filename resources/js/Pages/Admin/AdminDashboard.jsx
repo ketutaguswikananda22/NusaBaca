@@ -35,7 +35,7 @@ export default function AdminDashboard({
         Swal.fire({
             title: 'Pulihkan Akun?',
             text: `Apakah Anda yakin ingin mengaktifkan kembali akun ${name}?`,
-            icon: 'question',
+            icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#10b981',
             confirmButtonText: 'Ya, Pulihkan!',

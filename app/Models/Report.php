@@ -15,7 +15,8 @@ class Report extends Model
         'book_id', 
         'reported_user_id', // Tambahkan ini
         'reason', 
-        'description'
+        'description',
+        'status'
     ];
 
     public function user()

@@ -17,6 +17,7 @@ return new class extends Migration
         
         // 2. Ubah book_id agar boleh kosong (nullable)
         $table->foreignId('book_id')->nullable()->change();
+        $table->unique(['user_id', 'reported_user_id'], 'unique_report_per_user');
     });
 }
 

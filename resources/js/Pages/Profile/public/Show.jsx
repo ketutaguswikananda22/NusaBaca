@@ -41,38 +41,53 @@ export default function Show({ auth, author: initialAuthor, books, conversations
         description: '',
     });
 
-    const handleReportSubmit = (e) => {
-        e.preventDefault();
+   const handleReportSubmit = (e) => {
+    e.preventDefault();
 
-        postReport(route('reports.user'), {
-            preserveScroll: true,
-            onSuccess: () => {
-                setShowReportModal(false);
-                resetReport();
-                
-                // Alert Sukses yang Keren
+    postReport(route('reports.user'), {
+        preserveScroll: true,
+        onSuccess: (page) => {
+            // 1. CEK DULU: Apakah ada pesan error dari Laravel?
+            if (page.props.flash.error) {
                 Swal.fire({
-                    title: 'Laporan Terkirim',
-                    text: 'Terima kasih, laporan Anda akan segera kami tinjau.',
-                    icon: 'success',
+                    title: 'Gagal!',
+                    text: page.props.flash.error, // Isinya: "Anda sudah melaporkan..."
+                    icon: 'error',
                     background: '#ffffff',
-                    confirmButtonColor: '#ef4444', // Warna merah (sesuai tema lapor)
+                    confirmButtonColor: '#3b82f6', // Biru atau warna netral lainnya
                     customClass: {
                         popup: 'rounded-[30px]',
                         confirmButton: 'rounded-full px-8 py-3 text-[10px] font-black uppercase tracking-widest'
                     }
                 });
-            },
-            onError: () => {
+            } else {
+                // 2. JIKA TIDAK ADA ERROR, baru tutup modal dan tampilkan sukses
+                setShowReportModal(false);
+                resetReport();
+
                 Swal.fire({
-                    title: 'Waduh!',
-                    text: 'Sepertinya ada masalah teknis. Coba lagi nanti ya.',
-                    icon: 'error',
-                    confirmButtonColor: '#6366f1'
+                    title: 'Laporan Terkirim',
+                    text: 'Terima kasih, laporan Anda akan segera kami tinjau.',
+                    icon: 'success',
+                    background: '#ffffff',
+                    confirmButtonColor: '#ef4444',
+                    customClass: {
+                        popup: 'rounded-[30px]',
+                        confirmButton: 'rounded-full px-8 py-3 text-[10px] font-black uppercase tracking-widest'
+                    }
                 });
             }
-        });
-    };
+        },
+        onError: () => {
+            Swal.fire({
+                title: 'Waduh!',
+                text: 'Sepertinya ada kesalahan pada formulir Anda.',
+                icon: 'error',
+                confirmButtonColor: '#6366f1'
+            });
+        }
+    });
+};
 
     const submitMessage = (e) => {
         e.preventDefault();
@@ -437,6 +452,7 @@ export default function Show({ auth, author: initialAuthor, books, conversations
                                                 <option value="">Pilih Alasan</option>
                                                 <option value="Inappropriate Content">Konten Tidak Pantas</option>
                                                 <option value="Harassment">Pelecehan/Bullying</option>
+                                                <option value="Plagiarism">Plagiarism</option>
                                                 <option value="Spam">Spam</option>
                                                 <option value="Impersonation">Penyamaran Identitas</option>
                                             </select>
