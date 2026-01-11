@@ -2,10 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { router, Link } from '@inertiajs/react';
 import DarkModeToggle from '@/Components/DarkModeToggle';
 import Swal from 'sweetalert2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend, Filler } from 'chart.js';
+import { Line, Doughnut } from 'react-chartjs-2';
 
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    ArcElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler
+);
 
 export default function AdminDashboard({ 
-    user = {}, 
+    user = {},
+    reportChartData,
+    statusStats,
     theme = { card: 'bg-white dark:bg-[#111111] border-neutral-200 dark:border-white/5 text-neutral-900 dark:text-white'}, 
     stats, 
     authors, 
@@ -33,6 +48,33 @@ export default function AdminDashboard({
                 });
             }
         });
+    };
+
+    const isLineDataEmpty = !reportChartData?.totals || reportChartData.totals.length === 0 || reportChartData.totals.every(item => item === 0);
+
+    const isDoughnutEmpty = !statusStats || (Number(statusStats.pending) === 0 && Number(statusStats.resolved) === 0);
+
+    const lineData = {
+        labels: isLineDataEmpty ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] : reportChartData.labels,
+        datasets: [
+            {
+                fill: true,
+                label: 'Jumlah Laporan',
+                data: isLineDataEmpty ? [1, 5, 8, 15, 7] : reportChartData.totals,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                tension: '0.4',
+                borderDash: isLineDataEmpty ? [5, 5] : [],
+            }],
+    };
+
+    const doughnutData = {
+        labels: ['Pending', 'Resolved'],
+        datasets: [{
+            data: isDoughnutEmpty ? [1, 1] : [Number(statusStats?.pending || 0), Number(statusStats?.resolved || 0)],
+            backgroundColor: isDoughnutEmpty ? ['#facc1520', '#10b98120'] : ['#f59e0b', '#10b981'],
+            borderWidth: 0,
+        }],
     };
 
     return (
@@ -73,7 +115,7 @@ export default function AdminDashboard({
                         </Link>
                     </div>
                 </div>
-
+                    
                 {/* 2. Header Welcome */}
                 <div className={`md:col-span-3 ${theme?.card} rounded-[2.5rem] p-10 border flex flex-col md:flex-row items-center justify-between gap-6`}>
                     <h3 className="text-3xl font-medium leading-tight italic uppercase tracking-tighter text-center md:text-left">
@@ -112,7 +154,7 @@ export default function AdminDashboard({
                 {/* 6. Settings Navigation & Mini Stats */}
                 <div className="md:col-span-2 flex flex-col gap-4">
                     <div className={`flex-1 ${theme?.card} rounded-[2.5rem] p-6 border flex flex-col gap-2`}>
-                        {['profile', 'security', 'danger'].map((tab) => (
+                        {['profile', 'security', 'analytics', 'danger'].map((tab) => (
                             <button 
                                 key={tab} 
                                 onClick={() => setActiveTab(tab)} 
@@ -122,7 +164,7 @@ export default function AdminDashboard({
                                     : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400'
                                 }`}
                             >
-                                {tab} Settings
+                                {tab === 'analytics' ? '📊 Data Analytics' : `${tab} Settings`}
                             </button>
                         ))}
                     </div>
@@ -142,7 +184,7 @@ export default function AdminDashboard({
                 </div>
 
                 {/* 7. Author Management List */}
-               <div className={`md:col-span-2 md:row-span-2 ${theme?.card} rounded-[3rem] p-8 border flex flex-col min-h-[500px]`}>
+               <div className={`md:col-span-2 md:row-span-2 ${theme?.card} rounded-[rem] p-8 border flex flex-col min-h-[500px]`}>
                     <div className="flex justify-between items-center mb-8">
                         <h4 className="text-sm font-black uppercase tracking-tighter italic">Author<span className="text-[#ff6122] italic"> Management</span></h4>
                         <div className="bg-indigo-500/10 text-indigo-500 px-4 py-1 rounded-full border border-indigo-500/20 text-[10px] font-black">
@@ -209,7 +251,8 @@ export default function AdminDashboard({
                         {activeTab} <span className="text-neutral-400 font-light italic">Settings</span>
                     </h4>
                     <div className="max-h-[500px] overflow-y-auto pr-4 custom-scrollbar">
-                        {renderActiveForm()}
+                        {/* Kirim lineData dan doughnutData ke fungsi render */}
+                        {renderActiveForm(lineData, doughnutData)}
                     </div>
                 </div>
 

@@ -145,16 +145,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/unfollow/{id}', [ProfileController::class, 'unfollow'])->name('unfollow.action');
     Route::post('/user/{id}/conversation', [ProfileController::class, 'storeConversation'])->name('conversation.store');
 
-    // --- Admin Routes (DIBERSIHKAN DAN DIATUR ULANG) ---
     // --- Admin Routes (VERSI FIX) ---
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     
     // 1. Dashboard Utama
-    // Sekarang namanya jadi 'admin.index'
     Route::get('/', [App\Http\Controllers\AdminController::class, 'index'])->name('index');
 
     // 2. Report Management
-    // Sekarang namanya jadi 'admin.reports.index', 'admin.reports.destroy', dll.
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::delete('/reports/{id}', [ReportController::class, 'destroy'])->name('reports.destroy');
     Route::patch('/reports/{id}', [ReportController::class, 'update'])->name('reports.update');

@@ -8,6 +8,8 @@ use App\Models\WriterApplication;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Report;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
@@ -22,7 +24,6 @@ public function index()
             return [
                 'id' => $book->id,
                 'title' => $book->title,
-                // Tambahkan baris ini agar sinopsis terkirim ke React
                 'description' => $book->description, 
                 'cover_path' => $book->cover_path ? asset('storage/' . $book->cover_path) : asset('images/default-cover.jpg'),
                 'user' => [
@@ -31,11 +32,26 @@ public function index()
             ];
         });
 
-    return Inertia::render('Admin/Moderation', [
+    $reportStats = Report::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as total'))
+        ->where('created_at', '>=', Carbon::now()->subDays(6))
+        ->groupBy('date')
+        ->orderBy('date', 'ASC')
+        ->get();
+    
+    $statusStats = [
+        'pending' => Report::where('status', 'pending')->count(),
+        'resolved' => Report::where('status', 'resolved')->count(),
+    ];
+    return Inertia::render('Admin/Edit', [
         'books' => $books,
-        'auth' => [
-            'user' => auth()->user()
-        ]
+        'reportChartData' => [
+        // Ambil label hari dari database, jika kosong kirim array kosong []
+            'labels' => $reportStats->pluck('date')->map(fn($date) => \Carbon\Carbon::parse($date)->format('D')),
+            // Ambil total angka dari database, jika kosong kirim array kosong []
+            'totals' => $reportStats->pluck('total'),
+        ],
+        'statusStats' => $statusStats, 
+        'auth' => ['user' => auth()->user()]
     ]);
 }
 

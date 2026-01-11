@@ -129,7 +129,7 @@ export default function Welcome({ auth, recentBooks }) {
                                 <span>React</span>
                                 <span className="text-gray-600">/</span>
                                 <span>Inertia</span>
-                                <span className="text-grey-600">/</span>
+                                <span className="text-gray-600">/</span>
                                 <span>MySQL</span>
                             </div>
                         </div>
