@@ -155,6 +155,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::delete('/reports/{id}', [ReportController::class, 'destroy'])->name('reports.destroy');
     Route::patch('/reports/{id}', [ReportController::class, 'update'])->name('reports.update');
+    Route::post('/admin/books/{id}/reject', [App\Http\Controllers\AdminController::class, 'rejectBook'])->name('admin.books.reject');
     
     // 3. Moderasi Buku
     Route::get('/moderation', [App\Http\Controllers\AdminController::class, 'moderationIndex'])->name('moderation');

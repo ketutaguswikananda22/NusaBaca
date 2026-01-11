@@ -51,22 +51,38 @@ export default function Moderation({ auth, books }) {
     const handleReject = (bookId, bookTitle) => {
         Swal.fire({
             title: 'Tolak Karya?',
-            text: `Hapus pengajuan "${bookTitle}"?`,
+            text: `Berikan alasan penolakan untuk "${bookTitle}"`,
             icon: 'warning',
+            input: 'select',
+            inputOptions: {
+                'Konten Tidak Pantas (18+)': 'Konten Tidak Pantas (18+)',
+                'Plagiarisme': 'Plagiarisme',
+                'Kualitas Gambar/Cover Rendah': 'Kualitas Gambar/Cover Rendah',
+                'Lainnya': 'Lainnya'
+            },
+            inputPlaceholder: '-- Pilih Alasan Penolakan --',
             showCancelButton: true,
             confirmButtonColor: '#ef4444',
             cancelButtonColor: '#64748b',
             confirmButtonText: 'Ya, Tolak',
             cancelButtonText: 'Batal',
             reverseButtons: true,
-            customClass: { popup: 'rounded-[24px]' }
+            customClass: { popup: 'rounded-[24px]' },
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Anda harus memilih atau memberikan alasan!'
+                }
+            }
         }).then((result) => {
             if (result.isConfirmed) {
-                router.delete(route('books.destroy', bookId), {
+                router.post(route('admin.books.reject', bookId), {
+                    reason: result.value
+                }, {
                     onSuccess: () => {
                         setSelectedBook(null);
                         Swal.fire({
                             title: 'Ditolak',
+                            text: 'Penulis akan menerima email alasan penolakan.',
                             icon: 'success',
                             timer: 2000,
                             showConfirmButton: false,

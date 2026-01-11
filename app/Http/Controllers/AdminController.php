@@ -10,6 +10,9 @@ use Inertia\Inertia;
 use App\Models\Report;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Mail\BookRejectedMail; // Class Mailable yang baru kita buat
+use Illuminate\Support\Facades\Mail; // Facade untuk mengirim email
+
 
 class AdminController extends Controller
 {
@@ -42,7 +45,7 @@ public function index()
         'pending' => Report::where('status', 'pending')->count(),
         'resolved' => Report::where('status', 'resolved')->count(),
     ];
-    return Inertia::render('Admin/Edit', [
+    return Inertia::render('Admin/Moderation', [
         'books' => $books,
         'reportChartData' => [
         // Ambil label hari dari database, jika kosong kirim array kosong []
@@ -87,4 +90,24 @@ public function index()
     return redirect()->back()->with('success', 'Laporan Anda telah dikirim.');
     }
 
+    public function rejectBook(Request $request, $id)
+    {
+        $request->validate([
+            'reason' => 'required|string'
+        ]);
+
+        $book = Book::with('user')->findOrFail($id);
+
+        $book->update([
+            'status' => 'rejected',
+            'rejection_reason' => $request->reason
+        ]);
+
+        // Kirim email ke penulis
+        if ($book->user && $book->user->email) {
+            Mail::to($book->user->email)->send(new BookRejectedMail($book, $request->reason));
+        }
+
+        return back()->with('success', 'Buku telah ditolak dan email pemberitahuan dikirim.');
+    }
 }
