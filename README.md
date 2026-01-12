@@ -1,17 +1,6 @@
-<div align="center">
-  <table style="border: none; border-collapse: collapse;">
-    <tr style="border: none;">
-      <td style="border: none; padding: 0;">
-        <img src="Screenshots/nusabaca1.jpeg" width="100" alt="NusaBaca Logo">
-      </td>
-      <td style="border: none; padding-left: 20px; vertical-align: middle;">
-        <div style="font-size: 45px; font-weight: bold; font-family: sans-serif;">
-          Nusa<font color="#ff6122">Baca</font>
-        </div>
-      </td>
-    </tr>
-  </table>
-</div>
+<p align="center">
+  <img src="Screenshots/nusabaca-logo.png" width="450" alt="NusaBaca Branding">
+</p>
 
 # 📚 NusaBaca - Comprehensive Ebook & Moderation Ecosystem
 
