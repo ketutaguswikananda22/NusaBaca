@@ -4,10 +4,10 @@
       <td style="border: none; padding: 0;">
         <img src="Screenshots/nusabaca1.jpeg" width="100" alt="NusaBaca Logo">
       </td>
-      <td style="border: none; padding-left: 15px; vertical-align: middle;">
-        <h1 style="border: none; margin: 0; font-size: 3.2em; line-height: 1;">
-          Nusa<span style="color: #ff6122;">Baca</span>
-        </h1>
+      <td style="border: none; padding-left: 20px; vertical-align: middle;">
+        <div style="font-size: 45px; font-weight: bold; font-family: sans-serif;">
+          Nusa<font color="#ff6122">Baca</font>
+        </div>
       </td>
     </tr>
   </table>
