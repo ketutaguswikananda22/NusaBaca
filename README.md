@@ -1,5 +1,10 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo">
+  <a href="#">
+    <img src="Screenshots/nusabaca1.jpeg" width="100" alt="NusaBaca Logo" style="vertical-align: middle">
+  </a>
+  <span style="font-size: 3em; font-weight: bold; vertical-align: middle; margin-left: 10px;">
+    Nusa<span style="color: #ff6122;">Baca</span>
+  </span>
 </p>
 
 # 📚 NusaBaca - Comprehensive Ebook & Moderation Ecosystem
@@ -28,6 +33,8 @@ Sistem ini menjamin keamanan akun dengan fitur *force-logout* instan. Begitu Adm
 ### 2. Role-Based Access Control (RBAC)
 Pemisahan hak akses yang sangat ketat menggunakan Middleware Laravel untuk tiga level pengguna: **Admin**, **Author**, dan **Pembaca**.
 
+### 3. SEO FRIENDLY WITH GENRE FILTER
+Fitur search yang sudah menerapkan SEO (Search Engine Optimization) dan filter buku berdasarkan genre
 ---
 
 ## 🚀 Fitur Unggulan (Full Feature List)
