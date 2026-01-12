@@ -89,18 +89,34 @@ Route::get('/auth/google/callback', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
+    // Tambahkan ini di dalam Route::middleware(['auth', 'verified'])
+Route::get('/settings/profile', function() {
+    return redirect()->route('reports.history');
+});
     // --- Notifications System ---
     Route::controller(ProfileController::class)->group(function () {
         Route::get('/notifications', 'notifications')->name('notifications.index');
     });
     Route::get('/history-laporan', [ReportController::class, 'history'])->name('reports.history');
     Route::post('/notifications/{id}/read', function ($id) {
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-        $notification = $user->notifications()->findOrFail($id);
-        $notification->markAsRead();
-        return redirect($notification->data['url'] ?? '/dashboard');
-    })->name('notifications.read');
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
+    $notification = $user->notifications()->findOrFail($id);
+    $notification->markAsRead();
+
+    $data = $notification->data;
+    $url = $data['url'] ?? '/dashboard';
+
+    // LOGIKA KHUSUS AUTHOR:
+    // Kalau user adalah penulis DAN tujuannya mau ke profil (edit profile)
+    // Kita paksa mereka ke Riwayat Laporan aja.
+    if ($user->role === 'penulis' && (str_contains($url, 'profile') || $data['title'] === 'Peringatan Akun')) {
+        return redirect()->route('reports.history');
+    }
+
+    // Untuk pembaca biasa atau rute selain profil, arahkan normal
+    return redirect($url);
+})->name('notifications.read');
 
     Route::post('/notifications/mark-all-read', function () {
         Auth::user()->unreadNotifications->markAsRead();

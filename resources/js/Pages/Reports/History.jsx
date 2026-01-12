@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
-
-export default function History({ auth, reports }) {
+export default function History({ auth, reports = { data: [] } }) {
+  
     return (
         <AuthenticatedLayout user={auth.user}>
             <Head title="Riwayat Laporan" />

@@ -104,14 +104,34 @@ class ReportController extends Controller
             }
 
             if ($penulis) {
-                // Notifikasi Email
-                @Mail::to($penulis->email)->send(new ReportNotification("Peringatan Akun", "Akun Anda dilaporkan.", $report->reason));
+                // 1. Definisikan daftar pesan sistem otomatis
+                $systemMessages = [
+                    'PLAGIARISM' => 'SISTEM KAMI MENDETEKSI ADANYA INDIKASI PLAGIARISME TANPA IZIN PADA KARYA ANDA.',
+                    'Spam' => 'AKUN ANDA DILAPORKAN KARENA MELAKUKAN AKTIVITAS PENGIRIMAN PESAN ATAU KONTEN MASSAL.',
+                    'INAPPROIRATE CONTENT' => 'KONTEN YANG ANDA UNGGAH DINILAI MELANGGAR PEDOMAN KOMUNITAS.',
+                    'HARASSMENT' => 'SISTEM MENERIMA LAPORAN TERKAIT TINDAKAN PELECEHAN ATAU PERUNDUNGAN.',
+                    'IMPERSONATION' => 'AKUN ANDA DILAPORKAN KARENA MENGGUNAKAN IDENTITAS ORANG LAIN TANPA IZIN.',
+                ];
                 
+                $dbReason = strtoupper(trim($report->reason));
+                // 2. Ambil pesan berdasarkan alasan laporan, jika tidak terdaftar gunakan default
+                $pesanOtomatis = $systemMessages[$dbReason] ?? 'Akun Anda dilaporkan karena melanggar pedoman komunitas.';
+
+                foreach ($systemMessages as $key => $message) {
+                    if (str_contains($dbReason, $key)) {
+                        $pesanOtomatis = $message;
+                        break;
+                    }
+                }
+
+                // Notifikasi Email (menggunakan pesan otomatis agar seragam)
+                @Mail::to($penulis->email)->send(new ReportNotification("Peringatan Akun", $pesanOtomatis, $report->reason));
+
                 // --- NOTIFIKASI LONCENG PENULIS ---
                 $penulis->notify(new AktivitasNotifikasi([
                     'title'   => 'Peringatan Akun',
-                    'message' => 'Akun Anda dilaporkan dengan alasan: ' . $report->reason,
-                    'url'     => '/settings/profile',
+                    'message' => $pesanOtomatis, // Sekarang pesan ini lebih deskriptif
+                    'url'     => '/history-laporan',
                     'type'    => 'warning'
                 ]));
 
@@ -147,13 +167,62 @@ class ReportController extends Controller
 
     public function history()
     {
-        $reports = \App\Models\Report::with(['book', 'reportedUser']) // Tambahkan reportedUser
-            ->where('user_id', Auth::id())
-            ->latest()
-            ->paginate(10);
+        $user = Auth::user();
 
-        return Inertia::render('Reports/History', [
-            'reports' => $reports
+    // Mapping pesan otomatis berdasarkan alasan (reason)
+    $systemMessages = [
+        'PLAGIARISM' => 'SISTEM  KAMI MENDETEKSI ADANYA INDIKASI PLAGIARISME TANPA IZIN PADA KARYA ANDA.',
+        'SPAM' => 'AKUN ANDA DILAPORKAN KARENA MELAKUKAN AKTIVITAS PENGIRIMAN PESAN ATAU KONTEN MASSAL.',
+        'INAPPROIRATE CONTENT' => 'KONTEN YANG ANDA UNGGAH DINILAI MELANGGAR PEDOMAN KOMUNITAS.',
+        'HARASSMENT' => 'SISTEM MENERIMA LAPORAN TERKAIT TINDAKAN PELECEHAN ATAU PERUNDUNGAN.',
+        'IMPERSONATION' => 'AKUN ANDA DILAPORKAN KARENA MENGGUNAKAN IDENTITAS ORANG LAIN TANPA IZIN.',
+    ];
+
+    $data = \App\Models\Report::where('user_id', $user->id)
+        ->orWhere('reported_user_id', $user->id)
+        ->latest()
+        ->get()
+        ->map(function ($report) use ($user, $systemMessages) {
+
+            $dbReason = strtoupper(trim($report->reason));  
+            // Ambil pesan sistem berdasarkan alasan, jika tidak ada gunakan default deskripsi pelapor
+            $fullReason = $systemMessages[$dbReason] ?? ($report->description ?? 'Laporan pelanggaran aturan komunitas.');
+
+            foreach ($systemMessages as $key => $message) {
+                    if (str_contains($dbReason, $key)) {
+                    $fullReason = $message;
+                    break;
+                }
+            }
+
+            // Jika yang melihat adalah Author (terlapor)
+            if ($report->reported_user_id === $user->id) {
+                return [
+                    'id' => $report->id,
+                    'reason' => $fullReason, // Gunakan pesan otomatis di sini
+                    'status' => $report->status,
+                    'created_at' => $report->created_at,
+                    'reported_user' => [
+                        'name' => 'Peringatan Akun',
+                        'role' => 'system'
+                    ],
+                    'book' => $report->book
+                ];
+            }
+            
+            // Jika yang melihat adalah Pelapor asli
+            return [
+                'id' => $report->id,
+                'reason' => $report->reason,
+                'status' => $report->status,
+                'created_at' => $report->created_at,
+                'reported_user' => $report->reportedUser,
+                'book' => $report->book
+            ];
+        });
+
+    return Inertia::render('Reports/History', [
+        'reports' => ['data' => $data] 
         ]);
     }
 }

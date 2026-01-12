@@ -450,11 +450,11 @@ export default function Show({ auth, author: initialAuthor, books, conversations
                                                 required
                                             >
                                                 <option value="">Pilih Alasan</option>
-                                                <option value="Inappropriate Content">Konten Tidak Pantas</option>
-                                                <option value="Harassment">Pelecehan/Bullying</option>
-                                                <option value="Plagiarism">Plagiarism</option>
-                                                <option value="Spam">Spam</option>
-                                                <option value="Impersonation">Penyamaran Identitas</option>
+                                                <option value="INAPPROIRATE CONTENT">Konten Tidak Pantas</option>
+                                                <option value="HARASSMENT">Pelecehan/Bullying</option>
+                                                <option value="PLAGIARISM">Plagiarism</option>
+                                                <option value="SPAM">Spam</option>
+                                                <option value="IMPERSONATION">Penyamaran Identitas</option>
                                             </select>
                                                     
                                             <textarea 
@@ -479,7 +479,7 @@ export default function Show({ auth, author: initialAuthor, books, conversations
                                                 >
                                                     {reporting ? 'MENGIRIM...' : 'KIRIM LAPORAN'}
                                                 </button>
-                                            </div>
+                                            </div>  
                                         </form>
                                     </div>
                                 </div>
