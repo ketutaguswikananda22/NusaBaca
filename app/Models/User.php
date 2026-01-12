@@ -34,31 +34,35 @@ class User extends Authenticatable implements MustVerifyEmail
         'tiktok', 'linkedin', 'twitter'
     ];
 
-public function books()
-{
-    return $this->hasMany(Book::class);
-}
+    protected $appends = [
+        'profile_photo_url',
+    ];
 
-public function readingLists()
-{
-    return $this->hasMany(ReadingList::class);
-}
+    public function books()
+    {
+        return $this->hasMany(Book::class);
+    }
 
-// App/Models/User.php
+    public function readingLists()
+    {
+        return $this->hasMany(ReadingList::class);
+    }
 
-// User yang mengikuti saya (Para Pengikut)
-// User yang diikuti oleh user ini (Following)
-public function following()
-{
-    // Tambahkan 'followers' sebagai parameter kedua (nama tabel)
-    return $this->belongsToMany(User::class, 'followers', 'follower_id', 'following_id');
-}
+    // App/Models/User.php
 
-public function followers()
-{
-    // Tambahkan 'followers' sebagai parameter kedua (nama tabel)
-    return $this->belongsToMany(User::class, 'followers', 'following_id', 'follower_id');
-}
+    // User yang mengikuti saya (Para Pengikut)
+    // User yang diikuti oleh user ini (Following)
+    public function following()
+    {
+        // Tambahkan 'followers' sebagai parameter kedua (nama tabel)
+        return $this->belongsToMany(User::class, 'followers', 'follower_id', 'following_id');
+    }
+
+    public function followers()
+    {
+        // Tambahkan 'followers' sebagai parameter kedua (nama tabel)
+        return $this->belongsToMany(User::class, 'followers', 'following_id', 'follower_id');
+    }
 
     public function ratings()
     {
@@ -103,8 +107,8 @@ public function followers()
             ->orderBy('created_at', 'desc');
     }
 
-// Pesan yang sedang di-pin untuk ditampilkan di tab Perihal
-public function pinnedMessage()
+    // Pesan yang sedang di-pin untuk ditampilkan di tab Perihal
+    public function pinnedMessage()
     {
         return $this->hasOne(Conversation::class, 'profile_owner_id')
             ->where('is_pinned', true)
@@ -113,6 +117,20 @@ public function pinnedMessage()
 
     public function profileMessages()
     {
-    return $this->hasMany(Message::class, 'receiver_id')->with('sender')->latest();
+        return $this->hasMany(Message::class, 'receiver_id')->with('sender')->latest();
+    }
+
+    public function getProfilePhotoUrlAttribute()
+    {
+        if ($this->avatar) {
+            // Jika avatar diawali http (seperti dari Google/sosmed), pakai langsung
+            // Jika tidak, ambil dari folder storage
+            return str_starts_with($this->avatar, 'http') 
+                ? $this->avatar 
+                : asset('storage/' . $this->avatar);
+        }
+
+        // Jika tidak ada foto, kirim null agar frontend pakai inisial
+        return null;
     }
 }

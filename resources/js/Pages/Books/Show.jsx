@@ -156,19 +156,35 @@ export default function Show({ auth, book, initialIsInLibrary, recommendations }
                         <div className="lg:col-span-8 space-y-10">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-800">
-                                        {book.user?.name?.charAt(0)}
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Author</p>
-                                        <Link 
-                                            href={route('author.profile', book.user_id)} 
-                                            className="text-indigo-600 font-bold hover:text-[#ff6122] transition-colors cursor-pointer"
-                                        >
-                                            {book.user.name}
-                                        </Link>
-                                    </div>
-                                </div>
+    {/* Box Foto Profil Author */}
+    <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-800 overflow-hidden shadow-sm">
+        {book.user?.profile_photo_url ? (
+            <img 
+                src={book.user.profile_photo_url} 
+                alt={book.user.name} 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                    e.target.onerror = null; 
+                    e.target.src = `https://ui-avatars.com/api/?name=${book.user.name}&color=7F9CF5&background=EBF4FF`;
+                }}
+            />
+        ) : (
+            <span className="text-lg uppercase">
+                {book.user?.name?.charAt(0)}
+            </span>
+        )}
+    </div>
+
+    <div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Author</p>
+        <Link 
+            href={route('author.profile', book.user_id)} 
+            className="text-indigo-600 font-bold hover:text-[#ff6122] transition-colors cursor-pointer"
+        >
+            {book.user.name}
+        </Link>
+    </div>
+</div>
                                 <div className="flex gap-2">
                                     {book.genre?.map((g, i) => (
                                         <span key={i} className="px-3 py-1 bg-slate-50 text-slate-400 text-[9px] font-bold rounded-md uppercase border border-slate-100">#{g}</span>

@@ -157,7 +157,7 @@ export default function GenreManagement({ auth, genres }) {
                                     <thead>
                                         <tr className="border-b border-neutral-100 dark:border-white/5">
                                             <th className="px-8 py-4 text-[10px] font-black uppercase text-neutral-400 tracking-widest">Name</th>
-                                            <th className="px-8 py-4 text-[10px] font-black uppercase text-neutral-400 tracking-widest uppercase">Slug</th>
+                                            <th className="px-8 py-4 text-[10px] font-black uppercase text-neutral-400 tracking-widest">Slug</th>
                                             <th className="px-8 py-4 text-right text-[10px] font-black uppercase text-neutral-400 tracking-widest">Actions</th>
                                         </tr>
                                     </thead>
