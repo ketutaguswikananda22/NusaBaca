@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use App\Notifications\AktivitasNotifikasi;
 
 class ProfileController extends Controller
 {
@@ -265,5 +266,11 @@ class ProfileController extends Controller
         }
         $user->update(['avatar' => null]);
         return redirect()->back();
-    } 
+    }
+    public function notifications()
+    {
+        return Inertia::render('Notifications/Index', [
+            'allNotifications' => auth()->user()->notifications()->paginate(10)
+        ]);
+    }
 }

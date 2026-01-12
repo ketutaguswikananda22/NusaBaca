@@ -15,30 +15,36 @@ class HandleInertiaRequests extends Middleware
         return parent::version($request);
     }
 
-    public function share(Request $request): array
-    {
-        $user = \Illuminate\Support\Facades\Auth::user();
-        return array_merge(parent::share($request), [
-            'auth' => [
-                'user' => $request->user() ? [
-                    'id' => $request->user()->id,
-                    'name' => $request->user()->name,
-                    'email' => $request->user()->email,
-                    'avatar' => $request->user()->avatar,
-                    'role' => $request->user()->role,
-                ] : null,
-            ],
-            'flash' => [
-                'message' => session('message'), // Tambahkan ini
-                'type'    => session('type'),    // Tambahkan ini
-                'success' => session('success'),
-                'error'   => session('error'),
-                'error_suspended' => session('error_suspended'),
-            ],
-            'ziggy' => fn () => [
-                ...(new Ziggy)->toArray(),
-                'location' => $request->url(),
-            ],
-        ]);
-    }
+   public function share(Request $request): array
+{
+    $user = $request->user();
+
+    return array_merge(parent::share($request), [
+        'auth' => [
+            'user' => $user ? [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'avatar' => $user->avatar,
+                'role' => $user->role,
+            ] : null,
+            // Tambahkan ini: Mengambil 10 notifikasi terbaru dan jumlah yang belum dibaca
+            'notifications' => $user ? [
+                'list' => $user->notifications()->take(10)->get(),
+                'unread_count' => $user->unreadNotifications()->count(),
+            ] : null,
+        ],
+        'flash' => [
+            'message' => session('message'),
+            'type'    => session('type'),
+            'success' => session('success'),
+            'error'   => session('error'),
+            'error_suspended' => session('error_suspended'),
+        ],
+        'ziggy' => fn () => [
+            ...(new Ziggy)->toArray(),
+            'location' => $request->url(),
+        ],
+    ]);
+}
 }

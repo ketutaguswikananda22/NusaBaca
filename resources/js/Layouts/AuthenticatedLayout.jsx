@@ -4,12 +4,15 @@ import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { Link, usePage, useForm } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
+import { router } from '@inertiajs/react';
 import Swal from 'sweetalert2';
 
 export default function AuthenticatedLayout({ header, children }) {
     const { auth, flash } = usePage().props; 
     
     const user = auth?.user; 
+
+    const notifications = auth?.notifications;
     
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
     
@@ -44,8 +47,8 @@ export default function AuthenticatedLayout({ header, children }) {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100">
-            <nav className="border-b border-gray-100 bg-slate-400 shadow-sm sticky top-0 z-50">
+        <div className="min-h-screen bg-gray-600">
+            <nav className="border-b border-gray-600 bg-slate-400 shadow-sm sticky top-0 z-50">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex h-16 justify-between">
                         <div className="flex">
@@ -95,8 +98,71 @@ export default function AuthenticatedLayout({ header, children }) {
                                 )}
                             </div>
                         </div>
-
                         <div className="hidden sm:ms-6 sm:flex sm:items-center">
+                            <div className="relative ms-3">
+                                <Dropdown>
+                                    <Dropdown.Trigger>
+                                        <button className="relative p-2 text-gray-600 transition duration-150 ease-in-out bg-white rounded-full hover:text-gray-800 hover:bg-gray-100 focus:outline-none">
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                            </svg>
+
+                                            {/* Badge Angka Merah */}
+                                            {notifications?.unread_count > 0 && (
+                                                <span className="absolute top-0 right-0 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full ring-2 ring-white">
+                                                    {notifications.unread_count}
+                                                </span>
+                                            )}
+                                        </button>
+                                    </Dropdown.Trigger>
+                                        
+                                    <Dropdown.Content align="right" width="80">
+                                        <div className="block px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 border-b">
+                                            Notifikasi Terbaru
+                                        </div>
+                                        
+                                       <div className="max-h-64 overflow-y-auto">
+                                            {notifications?.list?.length > 0 ? (
+                                                notifications.list.map((n) => (
+                                                    <div key={n.id} className={`block border-b last:border-0 ${!n.read_at ? 'bg-blue-50/50' : 'bg-white'}`}>
+                                                        {/* Gunakan button agar bisa memicu router.post */}
+                                                        <button 
+                                                            onClick={() => router.post(route('notifications.read', n.id))}
+                                                            className="w-full text-left px-4 py-3 text-sm leading-5 transition duration-150 ease-in-out hover:bg-gray-50 focus:outline-none"
+                                                        >
+                                                            <div className="flex justify-between items-start">
+                                                                <p className={`font-bold ${!n.read_at ? 'text-blue-700' : 'text-gray-800'}`}>
+                                                                    {n.data.title}
+                                                                </p>
+                                                                {/* Dot penanda belum dibaca */}
+                                                                {!n.read_at && (
+                                                                    <span className="h-2 w-2 bg-blue-600 rounded-full mt-1"></span>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-gray-600 text-xs mt-0.5">{n.data.message}</p>
+                                                            <span className="text-[10px] text-gray-400 mt-1 block">
+                                                                {new Date(n.created_at).toLocaleDateString('id-ID', {
+                                                                    day: 'numeric',
+                                                                    month: 'long',
+                                                                    year: 'numeric'
+                                                                })}
+                                                            </span>
+                                                        </button>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="px-4 py-6 text-center text-gray-500 text-sm">
+                                                    Tidak ada notifikasi baru
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        <Link href={route('notifications.index')} className="block py-2 text-xs font-medium text-center text-indigo-600 bg-gray-50 hover:bg-gray-100">
+                                            Lihat Semua Notifikasi
+                                        </Link>
+                                    </Dropdown.Content>
+                                </Dropdown>
+                            </div>
                             <div className="relative ms-3">
                                 <Dropdown>
                                     <Dropdown.Trigger>

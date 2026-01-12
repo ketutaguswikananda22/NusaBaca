@@ -7,6 +7,9 @@ use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\WriterApplicationController;
 use App\Http\Controllers\BookPartController;
 use App\Http\Controllers\RatingController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\GenreController;
 use App\Models\Book;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -14,7 +17,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Laravel\Socialite\Facades\Socialite;
-use App\Http\Controllers\ReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,8 +27,8 @@ use App\Http\Controllers\ReportController;
 Route::get('/', function () {
     $recentBooks = Book::with('user')
         ->where('status', 'published') 
-        ->latest()                     
-        ->take(4)                      
+        ->latest()                      
+        ->take(4)                       
         ->get()
         ->map(function ($book) {
             if ($book->cover_path && !str_starts_with($book->cover_path, 'http')) {
@@ -45,50 +47,35 @@ Route::get('/author/{id}', [ProfileController::class, 'showPublicProfile'])->nam
 
 /*
 |--------------------------------------------------------------------------
-| Google Authentication Routes
+| Google Authentication
 |--------------------------------------------------------------------------
 */
 
-Route::get('/auth/google', function () {
-    return Socialite::driver('google')->redirect();
-})->name('google.login');
+Route::get('/auth/google', fn() => Socialite::driver('google')->redirect())->name('google.login');
 
 Route::get('/auth/google/callback', function () {
     try {
         $googleUser = Socialite::driver('google')->user();
-        $user = User::where('email', $googleUser->email)->first();
-
-        if ($user) {
-            $user->update([
+        $user = User::updateOrCreate(
+            ['email' => $googleUser->email],
+            [
                 'google_id' => $googleUser->id,
                 'name' => $googleUser->name,
-                'email_verified_at' => $user->email_verified_at ?? now(),
-            ]);
-        } else {
-            $user = User::create([
-                'email' => $googleUser->email,
-                'name' => $googleUser->name,
-                'password' => bcrypt(str()->random(16)),
+                'password' => $user->password ?? bcrypt(str()->random(16)),
                 'email_verified_at' => now(),
-                'google_id' => $googleUser->id,
-                'role' => ($googleUser->email == 'nusabacaa@gmail.com') ? 'admin' : 'user',
-            ]);
-        }
+                'role' => ($googleUser->email == 'nusabacaa@gmail.com') ? 'admin' : ($user->role ?? 'user'),
+            ]
+        );
 
-        $isApprovedWriter = DB::table('writer_applications')
-            ->where('user_id', $user->id)
-            ->where('status', 'approved')
-            ->exists();
-
-        if ($isApprovedWriter && $user->role !== 'admin') {
+        // Auto-check writer status
+        $isApproved = DB::table('writer_applications')->where('user_id', $user->id)->where('status', 'approved')->exists();
+        if ($isApproved && $user->role !== 'admin') {
             $user->update(['role' => 'penulis']);
         }
 
         Auth::login($user);
         request()->session()->regenerate();
-
         return redirect()->intended('/dashboard');
-
     } catch (\Exception $e) {
         return redirect('/login')->with('error', 'Gagal login menggunakan Google');
     }
@@ -96,35 +83,48 @@ Route::get('/auth/google/callback', function () {
 
 /*
 |--------------------------------------------------------------------------
-| Authenticated Routes (Auth & Verified)
+| Authenticated Routes
 |--------------------------------------------------------------------------
 */
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
+    // --- Notifications System ---
+    Route::controller(ProfileController::class)->group(function () {
+        Route::get('/notifications', 'notifications')->name('notifications.index');
+    });
+    Route::get('/history-laporan', [ReportController::class, 'history'])->name('reports.history');
+    Route::post('/notifications/{id}/read', function ($id) {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $notification = $user->notifications()->findOrFail($id);
+        $notification->markAsRead();
+        return redirect($notification->data['url'] ?? '/dashboard');
+    })->name('notifications.read');
+
+    Route::post('/notifications/mark-all-read', function () {
+        Auth::user()->unreadNotifications->markAsRead();
+        return back();
+    })->name('notifications.markAllRead');
+
+    Route::get('/contact-support', fn() => redirect()->route('dashboard'))->name('contact.support');
+
     // --- Dashboard & Library ---
     Route::get('/dashboard', [BookController::class, 'index'])->name('dashboard');
     Route::get('/library', [DashboardController::class, 'library'])->name('library.index');
     Route::post('/library/toggle/{bookId}', [LibraryController::class, 'toggle'])->name('library.toggle');
-    //report
     Route::post('/reports', [ReportController::class, 'store'])->name('reports.user');
 
-    // --- Book Management (CRUD) ---
+    // --- Book Management ---
     Route::get('/karya-saya', [BookController::class, 'myWorks'])->name('author.books');
-    Route::get('/books/create', [BookController::class, 'create'])->name('books.create');
-    Route::post('/books/store', [BookController::class, 'store'])->name('books.store');
-    Route::get('/books/{id}', [BookController::class, 'show'])->name('books.show'); 
-    Route::get('/books/{id}/edit', [BookController::class, 'edit'])->name('books.edit');
-    Route::put('/books/{id}/update', [BookController::class, 'update'])->name('books.update');
-    Route::delete('/books/{id}', [BookController::class, 'destroy'])->name('books.destroy');
+    Route::resource('books', BookController::class)->except(['index']); // Menggunakan resource agar lebih rapi
     
-    // --- Reading, Parts & Ratings ---
-    Route::get('/books/{id}/read/{part_id}', [BookController::class, 'read'])->name('books.read');
+    // --- Writing & Social ---
     Route::get('/books/{book}/parts/create', [BookPartController::class, 'create'])->name('parts.create');
     Route::post('/books/{book}/parts', [BookPartController::class, 'store'])->name('parts.store');
     Route::post('/books/{book}/rate', [RatingController::class, 'store'])->name('books.rate');
+    Route::get('/books/{id}/read/{part_id}', [BookController::class, 'read'])->name('books.read');
 
-    // --- Writer Application ---
     Route::get('/join-writer', [WriterApplicationController::class, 'index'])->name('writer.join');
     Route::post('/join-writer', [WriterApplicationController::class, 'store'])->name('writer.store');
 
@@ -138,43 +138,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/profile/update-full', 'updateFullProfile')->name('profile.update.full');
         Route::post('/profile/follow/{user}', 'follow')->name('profile.follow');
         Route::post('/profile/unfollow/{user}', 'unfollow')->name('profile.unfollow');
+        Route::post('/user/{id}/conversation', 'storeConversation')->name('conversation.store');
     });
 
-    // --- Social Interactions ---
-    Route::post('/follow/{id}', [ProfileController::class, 'follow'])->name('follow.action');
-    Route::post('/unfollow/{id}', [ProfileController::class, 'unfollow'])->name('unfollow.action');
-    Route::post('/user/{id}/conversation', [ProfileController::class, 'storeConversation'])->name('conversation.store');
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/', [AdminController::class, 'index'])->name('index');
+        
+        // Reports
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::delete('/reports/{id}', [ReportController::class, 'destroy'])->name('reports.destroy');
+        Route::patch('/reports/{id}', [ReportController::class, 'update'])->name('reports.update');
+        
+        
+        // Moderation
+        Route::get('/moderation', [AdminController::class, 'moderationIndex'])->name('moderation');
+        Route::post('/books/{id}/approve', [BookController::class, 'approve'])->name('books.approve');
+        Route::post('/books/{id}/reject-action', [AdminController::class, 'rejectBook'])->name('books.reject.action');
+        
+        // Genres
+        Route::resource('genres', GenreController::class);
 
-    // --- Admin Routes (VERSI FIX) ---
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    
-    // 1. Dashboard Utama
-    Route::get('/', [App\Http\Controllers\AdminController::class, 'index'])->name('index');
-
-    // 2. Report Management
-    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::delete('/reports/{id}', [ReportController::class, 'destroy'])->name('reports.destroy');
-    Route::patch('/reports/{id}', [ReportController::class, 'update'])->name('reports.update');
-    Route::post('/books/{id}/reject-action', [App\Http\Controllers\AdminController::class, 'rejectBook'])->name('books.reject.action');
-    
-    // 3. Moderasi Buku
-    Route::get('/moderation', [App\Http\Controllers\AdminController::class, 'moderationIndex'])->name('moderation');
-    Route::post('/books/{id}/approve', [BookController::class, 'approve'])->name('books.approve');
-    //Route::delete('/books/{id}/reject', [BookController::class, 'destroy'])->name('books.reject');
-
-    // 4. Manajemen Genre
-    Route::get('/genres', [App\Http\Controllers\GenreController::class, 'index'])->name('genres.index');
-    Route::post('/genres', [App\Http\Controllers\GenreController::class, 'store'])->name('genres.store');
-    Route::patch('/genres/{genre}', [App\Http\Controllers\GenreController::class, 'update'])->name('genres.update');
-    Route::delete('/genres/{genre}', [App\Http\Controllers\GenreController::class, 'destroy'])->name('genres.destroy');
-
-    // 5. Manajemen User & Penulis
-    Route::get('/writer-applications', [WriterApplicationController::class, 'adminIndex'])->name('writer.applications');
-    Route::post('/writer-applications/{id}', [WriterApplicationController::class, 'updateStatus'])->name('writer.updateStatus');
-    Route::post('/users/{id}/toggle', [App\Http\Controllers\AdminController::class, 'toggleUserStatus'])->name('users.toggle');
-
-    // routes/web.php
-    Route::patch('/admin/users/{id}/unban', [App\Http\Controllers\AdminController::class, 'unban'])->name('admin.users.unban');
+        // Users & Writers
+        Route::get('/writer-applications', [WriterApplicationController::class, 'adminIndex'])->name('writer.applications');
+        Route::post('/writer-applications/{id}', [WriterApplicationController::class, 'updateStatus'])->name('writer.updateStatus');
+        Route::post('/users/{id}/toggle', [AdminController::class, 'toggleUserStatus'])->name('users.toggle');
+        Route::patch('/users/{id}/unban', [AdminController::class, 'unban'])->name('users.unban');
     });
 });
 

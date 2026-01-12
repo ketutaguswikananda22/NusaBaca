@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    /* Bungkus semua table dengan div class "table-container" */
+    .table-responsive {
+        @apply overflow-x-auto w-full block whitespace-nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+}

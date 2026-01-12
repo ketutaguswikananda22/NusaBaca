@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Book;
 use App\Models\User;
+use App\Models\Report;
 use App\Models\Library;
 use App\Models\BookPart;
 use App\Models\Rating;
@@ -132,32 +133,39 @@ class BookController extends Controller
         ]);
     }
 
-   public function destroy($id)
-{
-    $book = Book::with('user')->findOrFail($id); 
-
-    if ($book->user_id !== Auth::id() && Auth::user()->role !== 'admin') {
-        abort(403);
-    }
-
+    public function destroy($id)
+    {
     try {
-        if (Auth::user()->role === 'admin') {
-            Mail::to($book->user->email)->send(new BookStatusNotification($book, 'rejected'));
-            Log::info("Email penolakan berhasil dikirim ke: " . $book->user->email);
+        $book = Book::findOrFail($id);
+        
+        /** @var \App\Models\User $user */
+        $user = Auth::user(); // Ini sudah benar
+
+        // PERBAIKAN: Gunakan variabel $user yang didefinisikan di atas, 
+        if ($user->id !== $book->user_id && $user->role !== 'admin') {
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses.');
         }
-    } catch (\Exception $e) {
-        Log::error("Gagal kirim email penolakan: " . $e->getMessage());
+
+        // 1. Hapus semua laporan yang merujuk ke buku ini agar tidak error foreign key
+        \App\Models\Report::where('book_id', $id)->delete();
+
+        // 2. Hapus dari library user lain
+        \Illuminate\Support\Facades\DB::table('libraries')->where('book_id', $id)->delete();
+
+        // 3. Hapus file cover dari storage jika ada
+        if ($book->cover_path && \Illuminate\Support\Facades\Storage::exists('public/' . $book->cover_path)) {
+            \Illuminate\Support\Facades\Storage::delete('public/' . $book->cover_path);
+        }
+
+        // 4. Hapus bukunya
+        $book->delete();
+
+        return redirect()->route('dashboard')->with('success', 'Buku dan data terkait berhasil dihapus.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menghapus buku: ' . $e->getMessage());
+        }
     }
-
-    if ($book->cover_path) {
-        $pathToDelete = str_replace('storage/', '', $book->cover_path);
-        Storage::disk('public')->delete($pathToDelete);
-    }
-
-    $book->delete();
-
-    return redirect()->back()->with('message', 'Karya berhasil ditolak dan dihapus!');
-}
 
     public function myWorks()
     {

@@ -5,9 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Report;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Inertia\Inertia; // Tambahkan ini di atas
+use Inertia\Inertia; 
 use App\Mail\ReportNotification;
 use Illuminate\Support\Facades\Mail;
+use App\Notifications\AktivitasNotifikasi;
 
 class ReportController extends Controller
 {
@@ -79,43 +80,80 @@ class ReportController extends Controller
 }
 
     public function update(Request $request, $id)
-{   
-    try {
-        $report = Report::findOrFail($id);
-
-        // Gunakan cara manual ini, lebih "galak" dan pasti masuk ke DB
-        $report->status = $request->status;
-        $report->save(); 
+    {   
+        try {
+            $report = Report::findOrFail($id);
+            $report->status = $request->status;
+            $report->save(); 
 
         if ($request->status === 'resolved') {
-            // Kita ambil user terbaru dari DB supaya datanya segar
             $penulis = \App\Models\User::find($report->reported_user_id);
             $pelapor = \App\Models\User::find($report->user_id);
 
-            if ($penulis) {
+            if ($pelapor) {
                 // Notifikasi Email
                 @Mail::to($pelapor->email)->send(new ReportNotification("Laporan Selesai", "Laporan Anda ditindaklanjuti."));
-                @Mail::to($penulis->email)->send(new ReportNotification("Peringatan Akun", "Akun Anda dilaporkan.", $report->reason));
+                
+                // --- NOTIFIKASI LONCENG PELAPOR ---
+                $pelapor->notify(new AktivitasNotifikasi([
+                    'title'   => 'Laporan Selesai',
+                    'message' => 'Laporan Anda telah ditindaklanjuti oleh admin.',
+                    'url'     => '/history-laporan', // Sesuaikan URL-mu
+                    'type'    => 'success'
+                ]));
+            }
 
-                // Hitung total laporan resolved untuk user ini
+            if ($penulis) {
+                // Notifikasi Email
+                @Mail::to($penulis->email)->send(new ReportNotification("Peringatan Akun", "Akun Anda dilaporkan.", $report->reason));
+                
+                // --- NOTIFIKASI LONCENG PENULIS ---
+                $penulis->notify(new AktivitasNotifikasi([
+                    'title'   => 'Peringatan Akun',
+                    'message' => 'Akun Anda dilaporkan dengan alasan: ' . $report->reason,
+                    'url'     => '/settings/profile',
+                    'type'    => 'warning'
+                ]));
+
                 $jumlahPelanggaran = Report::where('reported_user_id', $penulis->id)
                                     ->where('status', 'resolved')
                                     ->count();
 
-                    if ($jumlahPelanggaran >= 3) {
-                        $penulis->update([
-                            'is_banned' => true,
-                            'status'    => 'suspended'
-                        ]);
-                        @Mail::to($penulis->email)->send(new ReportNotification("Akun Ditangguhkan", "Akun diblokir karena >3 laporan valid."));
-                    }
+                if ($jumlahPelanggaran >= 3) {
+                    $penulis->update([
+                        'is_banned' => true,
+                        'status'    => 'suspended'
+                    ]);
+                    @Mail::to($penulis->email)->send(new ReportNotification("Akun Ditangguhkan", "Akun diblokir karena >3 laporan valid."));
+                    
+                    // --- NOTIFIKASI LONCENG BANNED ---
+                    $penulis->notify(new AktivitasNotifikasi([
+                        'title'   => 'Akun Ditangguhkan',
+                        'message' => 'Akun Anda telah dinonaktifkan secara permanen.',
+                        'url'     => '/contact-support',
+                        'type'    => 'error'
+                    ]));
                 }
             }
-
-            return redirect()->back()->with('success', 'Status berhasil diperbarui!');
-
-            }   catch (\Exception $e) {
-                    return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
+
+        return redirect()->back()->with('success', 'Status berhasil diperbarui!');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+
+    public function history()
+    {
+        $reports = \App\Models\Report::with(['book', 'reportedUser']) // Tambahkan reportedUser
+            ->where('user_id', Auth::id())
+            ->latest()
+            ->paginate(10);
+
+        return Inertia::render('Reports/History', [
+            'reports' => $reports
+        ]);
     }
 }

@@ -98,7 +98,7 @@ export default function Dashboard({ auth, books = [], genres = [] }) {
                     </div>
 
                     {/* Grid Buku */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
                         {filteredBooks.map(book => (
                             <div key={book.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col group hover:shadow-md transition-all relative">
                                 <Link href={route('books.show', book.id)} className="relative aspect-[3/4] overflow-hidden bg-slate-100">
@@ -121,8 +121,8 @@ export default function Dashboard({ auth, books = [], genres = [] }) {
                                     />
                                 </Link>
 
-                                <div className="p-4 flex flex-col flex-grow">
-                                    <h3 className="font-bold text-sm truncate text-slate-800 mb-1 uppercase">
+                                <div className="p-3 md:p-4 flex flex-col flex-grow">
+                                    <h3 className="font-bold text-[12px] md:text-sm truncate text-slate-800 mb-1 uppercase">
                                         {book.title}
                                     </h3>
                                     <p className="text-[10px] text-slate-500 mb-3">Oleh: {book.user?.name || 'Anonim'}</p>
