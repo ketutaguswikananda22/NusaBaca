@@ -1,11 +1,17 @@
-<p align="center">
-  <a href="#">
-    <img src="Screenshots/nusabaca1.jpeg" width="100" alt="NusaBaca Logo" style="vertical-align: middle">
-  </a>
-  <span style="font-size: 3em; font-weight: bold; vertical-align: middle; margin-left: 10px;">
-    Nusa<span style="color: #ff6122;">Baca</span>
-  </span>
-</p>
+<div align="center">
+  <table style="border: none; border-collapse: collapse;">
+    <tr style="border: none;">
+      <td style="border: none; padding: 0;">
+        <img src="Screenshots/nusabaca1.jpeg" width="100" alt="NusaBaca Logo">
+      </td>
+      <td style="border: none; padding-left: 15px; vertical-align: middle;">
+        <h1 style="border: none; margin: 0; font-size: 3.2em; line-height: 1;">
+          Nusa<span style="color: #ff6122;">Baca</span>
+        </h1>
+      </td>
+    </tr>
+  </table>
+</div>
 
 # 📚 NusaBaca - Comprehensive Ebook & Moderation Ecosystem
 
