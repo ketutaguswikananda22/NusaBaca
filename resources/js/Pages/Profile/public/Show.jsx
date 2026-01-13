@@ -16,6 +16,7 @@ export default function Show({ auth, author: initialAuthor, books, conversations
 
     const { post: followPost, processing: followProcessing } = useForm();
     const [replyingTo, setReplyingTo] = useState(null); 
+    const [activeReplyBox, setActiveReplyBox] = useState(null); // Menyimpan ID pesan yang akan dibalas
 
     function handleFollow() {
         const routeName = isFollowing ? 'profile.unfollow' : 'profile.follow';
@@ -32,6 +33,7 @@ export default function Show({ auth, author: initialAuthor, books, conversations
 
     const { data, setData, post, processing, reset, errors } = useForm({
         message: '',
+        parent_id: null,
     });
 
     const { data: reportData, setData: setReportData, post: postReport, processing: reporting, reset: resetReport } = useForm({
@@ -89,11 +91,31 @@ export default function Show({ auth, author: initialAuthor, books, conversations
     });
 };
 
-    const submitMessage = (e) => {
-        e.preventDefault();
-        post(route('conversation.store', author.id), {
-            preserveScroll: true,
-            onSuccess: () => reset(),
+    const handleReply = (msg) => {
+        setReplyingTo(msg);
+        setData('parent_id', msg.id); // Set parent_id ke ID pesan yang mau dibalas
+        // Scroll otomatis ke kolom input agar user sadar
+        const element = document.getElementById('message-form');
+        element?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    const cancelReply = () => {
+        setReplyingTo(null);
+        setData('parent_id', null);
+    };
+
+    const submitMessage = (e, parentId = null) => {
+        if (e) e.preventDefault();
+    
+        post(route('messages.store', author.id), {
+            data: { 
+                message: data.message, 
+                parent_id: parentId 
+            },
+            onSuccess: () => {
+                reset('message');
+                setActiveReplyId(null);
+            },
         });
     };
 
@@ -369,49 +391,164 @@ export default function Show({ auth, author: initialAuthor, books, conversations
                             )}
 
                             {activeTab === 'percakapan' && (
-                                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-                                    <div className="bg-white rounded-[35px] p-8 shadow-sm border border-neutral-100">
-                                        <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-neutral-800 mb-8 ">Berikan <span className="text-orange-500">Kesan & Pesan</span></h2>
-                                        <form onSubmit={submitMessage} className="space-y-5">
-                                            <textarea
-                                                className={`w-full bg-neutral-50 border-none rounded-[25px] p-6 text-sm font-medium focus:ring-2 focus:ring-orange-500/20 min-h-[150px] transition-all ${errors.message ? 'ring-2 ring-red-500' : ''}`}
-                                                placeholder="Ketik sesuatu yang berkesan..."
-                                                value={data.message}
-                                                onChange={e => setData('message', e.target.value)}
-                                            ></textarea>
-                                            {errors.message && <div className="text-red-500 text-[10px] font-bold uppercase ml-4">{errors.message}</div>}
-                                            <div className="flex justify-end">
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        
+                        {/* AREA 1: WRITE (Input Pesan Utama di Bagian Atas) */}
+                        <div className="bg-white rounded-[35px] p-8 shadow-sm border border-neutral-100 mb-6">
+                            <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-neutral-800 mb-8">
+                                Berikan <span className="text-orange-500">Kesan & Pesan</span>
+                            </h2>
+                            
+                            <div className="relative">
+                                <textarea
+                                    className={`w-full bg-neutral-50 border-none rounded-[25px] p-6 text-sm font-medium focus:ring-2 focus:ring-orange-500/20 min-h-[150px] transition-all resize-none ${
+                                        errors.message ? 'ring-2 ring-red-500' : ''
+                                    }`}
+                                    placeholder="Ketik sesuatu yang berkesan..."
+                                    // Logika: Jika sedang membalas (parent_id ada), kosongkan kotak atas.
+                                    // Jika tidak membalas (parent_id null), tampilkan data.message
+                                    value={data.parent_id === null ? data.message : ''}
+                                    onChange={e => {
+                                        setData(prev => ({
+                                            ...prev,
+                                            parent_id: null, // Reset ke pesan utama jika user mengetik di sini
+                                            message: e.target.value
+                                        }));
+                                    }}
+                                ></textarea>
+
+                                {errors.message && (
+                                    <div className="text-red-500 text-[10px] font-bold uppercase mt-2 ml-4">
+                                        {errors.message}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex justify-end mt-4">
+                                <button 
+                                    type="button"
+                                    onClick={(e) => submitMessage(e)}
+                                    // Tombol utama mati jika user sedang mengisi kotak balasan di bawah
+                                    disabled={processing || data.parent_id !== null || !data.message.trim()}
+                                    className="bg-orange-500 text-white px-10 py-4 rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-orange-600 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-orange-100"
+                                >
+                                    {processing && data.parent_id === null ? 'Mengirim...' : 'Kirim Sekarang'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* AREA 2: LIST PERCAKAPAN (Thread View) */}
+                        <div className="space-y-4 mt-6">
+                            {conversations?.length > 0 ? conversations.map((msg) => (
+                                <div key={msg.id} className="bg-white rounded-[28px] border border-neutral-100 shadow-sm overflow-hidden">
+                                    
+                                    {/* PESAN UTAMA DALAM LIST */}
+                                    <div className="p-6 flex gap-4 items-start group">
+                                        <div className="w-12 h-12 rounded-2xl bg-orange-100 flex-shrink-0 overflow-hidden shadow-sm">
+                                            <img src={getStorageUrl(msg.user?.avatar)} className="w-full h-full object-cover" alt="" />
+                                        </div>
+                                        <div className="flex-grow">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-sm font-black text-neutral-800 uppercase italic tracking-tighter">
+                                                        {msg.user?.name}
+                                                    </span>
+                                                    <span className="text-[9px] text-neutral-300 font-black uppercase">
+                                                        {msg.created_at_formatted || 'Baru saja'}
+                                                    </span>
+                                                </div>
+                                                
+                                                {/* Tombol Balas untuk memicu munculnya Area Input Reply */}
                                                 <button 
-                                                    type="submit"
-                                                    disabled={processing || !data.message.trim()}
-                                                    className="bg-orange-500 text-white px-10 py-4 rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-orange-600 transition-all disabled:opacity-50 shadow-lg shadow-orange-100"
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setData(prev => ({ ...prev, parent_id: msg.id, message: '' }));
+                                                    }}
+                                                    className="text-[9px] font-black uppercase text-orange-500 hover:underline"
                                                 >
-                                                    {processing ? 'Mengirim...' : 'Kirim Sekarang'}
+                                                    Balas
                                                 </button>
                                             </div>
-                                        </form>
+                                            <p className="text-neutral-500 text-sm font-medium leading-relaxed">{msg.message}</p>
+                                        </div>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        {conversations?.length > 0 ? conversations.map((msg) => (
-                                            <div key={msg.id} className="bg-white p-6 rounded-[28px] border border-neutral-100 shadow-sm flex gap-4 items-start">
-                                                <div className="w-12 h-12 rounded-2xl bg-orange-100 flex-shrink-0 overflow-hidden shadow-sm">
-                                                    <img src={getStorageUrl(msg.user?.avatar)} className="w-full h-full object-cover" alt="" />
+                                    {/* AREA KOTAK REPLY DINAMIS (Muncul tepat di bawah pesan yang diklik) */}
+                                    {data.parent_id === msg.id && (
+                                        <div className="px-6 pb-6 ml-12 animate-in slide-in-from-top-2">
+                                            <div className="flex gap-3 items-start bg-neutral-50 p-4 rounded-[20px] border border-orange-100">
+                                                <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 border border-neutral-200">
+                                                    <img src={getStorageUrl(auth.user?.avatar)} className="w-full h-full object-cover" alt="" />
                                                 </div>
-                                                <div>
-                                                    <div className="flex items-center gap-3 mb-1">
-                                                        <span className="text-sm font-black text-neutral-800 uppercase italic tracking-tighter">{msg.user?.name}</span>
-                                                        <span className="text-[9px] text-neutral-300 font-black uppercase">{msg.created_at_formatted || 'Baru saja'}</span>
+                                                <div className="flex-grow">
+                                                    <textarea
+                                                        autoFocus
+                                                        className="w-full bg-transparent border-none p-0 text-xs font-medium focus:ring-0 resize-none min-h-[40px]"
+                                                        placeholder={`Balas pesan ${msg.user?.name}...`}
+                                                        value={data.message}
+                                                        onChange={e => setData('message', e.target.value)}
+                                                    ></textarea>
+                                                    <div className="flex justify-end gap-2 mt-2">
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => setData(prev => ({ ...prev, parent_id: null, message: '' }))}
+                                                            className="text-[8px] font-bold uppercase text-neutral-400 hover:text-neutral-600"
+                                                        >
+                                                            Batal
+                                                        </button>
+                                                        <button 
+                                                            type="button"
+                                                            onClick={(e) => submitMessage(e)}
+                                                            disabled={processing || !data.message.trim()}
+                                                            className="bg-orange-500 text-white px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-wider shadow-sm"
+                                                        >
+                                                            {processing ? '...' : 'Kirim'}
+                                                        </button>
                                                     </div>
-                                                    <p className="text-neutral-500 text-sm font-medium leading-relaxed">{msg.message}</p>
                                                 </div>
                                             </div>
-                                        )) : (
-                                            <div className="text-center py-10 text-neutral-400 uppercase font-bold text-xs tracking-widest">Belum ada percakapan</div>
-                                        )}
+                                        </div>
+                                    )}
+
+                                    {/* AREA BALASAN YANG SUDAH TERDAFTAR (Thread Replies) */}
+                                    {msg.replies && msg.replies.length > 0 && (
+                                        <div className="bg-neutral-50/80 border-t border-neutral-100 p-6 space-y-6">
+                                            {msg.replies.map((reply) => (
+                                                <div key={reply.id} className="flex gap-4 items-start ml-12 relative">
+                                                    {/* Garis Vertikal Thread */}
+                                                    <div className="absolute -left-6 top-[-24px] bottom-6 border-l-2 border-neutral-200"></div>
+                                                    
+                                                    <div className="w-9 h-9 rounded-xl bg-white flex-shrink-0 overflow-hidden shadow-sm border border-neutral-100">
+                                                        <img src={getStorageUrl(reply.user?.avatar)} className="w-full h-full object-cover" alt="" />
+                                                    </div>
+                                                    <div className="flex-grow">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className="text-[11px] font-black text-neutral-800 uppercase italic tracking-tighter">
+                                                                {reply.user?.name}
+                                                            </span>
+                                                            <span className="px-2 py-0.5 bg-orange-100 text-orange-600 text-[7px] font-black uppercase rounded-full">
+                                                                Balasan
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-neutral-500 text-xs font-medium leading-relaxed">
+                                                            {reply.message}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )) : (
+                                <div className="bg-white rounded-[28px] border border-dashed border-neutral-200 p-20 text-center">
+                                    <div className="text-neutral-400 uppercase font-bold text-xs tracking-widest">
+                                        Belum ada percakapan masuk
                                     </div>
                                 </div>
                             )}
+                        </div>
+                    </div>
+                )}
 
                             {activeTab === 'mengikuti' && (
                                 <div className="bg-white rounded-[35px] p-10 shadow-sm border border-neutral-100">

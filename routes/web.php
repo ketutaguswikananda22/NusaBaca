@@ -106,10 +106,6 @@ Route::get('/settings/profile', function() {
 
     $data = $notification->data;
     $url = $data['url'] ?? '/dashboard';
-
-    // LOGIKA KHUSUS AUTHOR:
-    // Kalau user adalah penulis DAN tujuannya mau ke profil (edit profile)
-    // Kita paksa mereka ke Riwayat Laporan aja.
     if ($user->role === 'penulis' && (str_contains($url, 'profile') || $data['title'] === 'Peringatan Akun')) {
         return redirect()->route('reports.history');
     }
@@ -154,7 +150,7 @@ Route::get('/settings/profile', function() {
         Route::post('/profile/update-full', 'updateFullProfile')->name('profile.update.full');
         Route::post('/profile/follow/{user}', 'follow')->name('profile.follow');
         Route::post('/profile/unfollow/{user}', 'unfollow')->name('profile.unfollow');
-        Route::post('/user/{id}/conversation', 'storeConversation')->name('conversation.store');
+        Route::post('/user/{id}/conversation', 'storeConversation')->name('messages.store');
     });
 
     /*
