@@ -7,11 +7,14 @@ import { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
 import Swal from 'sweetalert2';
 
+// Pastikan path ini sesuai dengan letak file kamu di folder public
+const DEFAULT_AVATAR_ICON = "/image/default-avatar-icon.png";
+
 export default function AuthenticatedLayout({ header, children }) {
     const { auth, flash } = usePage().props; 
     
     const user = auth?.user; 
-
+    
     const notifications = auth?.notifications;
     
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
@@ -66,7 +69,6 @@ export default function AuthenticatedLayout({ header, children }) {
                                     Dashboard
                                 </NavLink>
 
-                                {/* Gunakan user?.role untuk keamanan */}
                                 {(user?.role === 'author' || user?.role === 'penulis') && (
                                     <NavLink href={route('author.books')} active={route().current('author.books')}>
                                         Karya Saya
@@ -107,7 +109,6 @@ export default function AuthenticatedLayout({ header, children }) {
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                                             </svg>
 
-                                            {/* Badge Angka Merah */}
                                             {notifications?.unread_count > 0 && (
                                                 <span className="absolute top-0 right-0 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full ring-2 ring-white">
                                                     {notifications.unread_count}
@@ -125,7 +126,6 @@ export default function AuthenticatedLayout({ header, children }) {
                                             {notifications?.list?.length > 0 ? (
                                                 notifications.list.map((n) => (
                                                     <div key={n.id} className={`block border-b last:border-0 ${!n.read_at ? 'bg-blue-50/50' : 'bg-white'}`}>
-                                                        {/* Gunakan button agar bisa memicu router.post */}
                                                         <button 
                                                             onClick={() => router.post(route('notifications.read', n.id))}
                                                             className="w-full text-left px-4 py-3 text-sm leading-5 transition duration-150 ease-in-out hover:bg-gray-50 focus:outline-none"
@@ -134,7 +134,6 @@ export default function AuthenticatedLayout({ header, children }) {
                                                                 <p className={`font-bold ${!n.read_at ? 'text-blue-700' : 'text-gray-800'}`}>
                                                                     {n.data.title}
                                                                 </p>
-                                                                {/* Dot penanda belum dibaca */}
                                                                 {!n.read_at && (
                                                                     <span className="h-2 w-2 bg-blue-600 rounded-full mt-1"></span>
                                                                 )}
@@ -167,15 +166,18 @@ export default function AuthenticatedLayout({ header, children }) {
                                 <Dropdown>
                                     <Dropdown.Trigger>
                                         <span className="inline-flex rounded-md">
-                                            <button type="button" className="inline-flex items-center justify-center rounded-full border border-transparent bg-white p-2 text-gray-500 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-700 focus:outline-none">
+                                            <button type="button" className="inline-flex items-center justify-center rounded-full border border-transparent transition duration-150 ease-in-out focus:outline-none">
                                                 <div className="relative">
-                                                    {user?.avatar ? (
-                                                        <img src={user.avatar} className="h-8 w-8 rounded-full object-cover border border-gray-200" alt={user?.name} />
-                                                    ) : (
-                                                        <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-xs font-bold">
-                                                            {user?.name?.charAt(0).toUpperCase() || 'U'}
-                                                        </div>
-                                                    )}
+                                                    {/* PERBAIKAN: Logika Avatar Default Tanpa Picsum */}
+                                                    <img 
+                                                        src={user?.avatar || DEFAULT_AVATAR_ICON} 
+                                                        className="h-10 w-10 rounded-full object-cover border-2 border-white/50 shadow-sm" 
+                                                        alt={user?.name} 
+                                                        onError={(e) => {
+                                                            e.target.onerror = null;
+                                                            e.target.src = DEFAULT_AVATAR_ICON;
+                                                        }}
+                                                    />
                                                 </div>
                                             </button>
                                         </span>
@@ -228,13 +230,16 @@ export default function AuthenticatedLayout({ header, children }) {
                     <div className="border-t border-gray-200 pb-1 pt-4">
                         <div className="flex items-center px-4">
                             <div className="shrink-0 me-3">
-                                {user?.avatar ? (
-                                    <img className="h-10 w-10 rounded-full object-cover border border-gray-200" src={user.avatar} alt={user?.name} />
-                                ) : (
-                                    <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
-                                        {user?.name?.charAt(0).toUpperCase() || 'U'}
-                                    </div>
-                                )}
+                                {/* PERBAIKAN: Logika Avatar Mobile */}
+                                <img 
+                                    src={user?.avatar || DEFAULT_AVATAR_ICON} 
+                                    className="h-10 w-10 rounded-full object-cover border border-gray-200" 
+                                    alt={user?.name} 
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = DEFAULT_AVATAR_ICON;
+                                    }}
+                                />
                             </div>
                             <div>
                                 <div className="text-base font-medium text-gray-800">{user?.name}</div>
