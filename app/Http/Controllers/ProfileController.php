@@ -6,6 +6,7 @@ use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Book;
 use App\Models\User;
 use App\Models\Message;
+use App\Models\Genre; // Tambahkan ini agar sistem kenal tabel genre
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -94,6 +95,7 @@ $conversations = Message::where('user_id', $user->id)
             'conversations' => $conversations,
             'status' => session('status'),
             'authors' => $authors, 
+            'genres' => Genre::all(),
             'stats' => [
                 'totalUsers' => (int) User::where('role', '!=', 'admin')->count(), 
                 'totalBooks' => (int) Book::count(),

@@ -6,7 +6,9 @@ import UserProfile from './Partials/UserProfile';
 import DeleteUserForm from './Partials/DeleteUserForm';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
+import AnalyticsDashboard from './Partials/AnalyticsDashboard';
 import { Line, Doughnut } from 'react-chartjs-2';
+import ManageGenreForm from './Partials/ManageGenreForm';
 import { 
     Chart as ChartJS, 
     CategoryScale, 
@@ -25,7 +27,7 @@ ChartJS.register(
     ArcElement, Title, Tooltip, Legend, Filler
 );
 
-export default function Edit({ auth, mustVerifyEmail, status, authors = [], stats = {}, userData, conversations = [], reportChartData, statusStats }) {
+export default function Edit({ auth, mustVerifyEmail, status, authors = [], stats = {}, userData, conversations = [], reportChartData, statusStats, genres = [] }) {
     // Gunakan userData dari controller jika ada, jika tidak gunakan auth.user
     const user = userData || auth.user;
     const fileInputRef = useRef(null);
@@ -37,7 +39,9 @@ export default function Edit({ auth, mustVerifyEmail, status, authors = [], stat
     useEffect(() => {
         const timer = setInterval(() => {
             const now = new Date();
-            setCurrentTime(now.toLocaleTimeString('en-GB', { hour12: false }));
+            const day = now.toLocaleDateString('en-GB', { weekday: 'long' });
+            const time = now.toLocaleTimeString('en-GB', { hour12: false });
+            setCurrentTime(`${day}|${time}`); // Gunakan pemisah unik untuk split nanti
         }, 1000);
         return () => clearInterval(timer);
     }, []);
@@ -80,55 +84,14 @@ const renderActiveForm = (lineData, doughnutData) => {
         case 'security':
             return <UpdatePasswordForm />;
         case 'analytics':
-            return (
-                <div className="space-y-10 animate-in fade-in zoom-in duration-300">
-                    {/* Line Chart Section */}
-                    <div className="h-[250px] w-full">
-                        <div className="flex justify-between items-center mb-4">
-                            <h5 className="text-[10px] font-black uppercase text-neutral-400 italic">
-                                Report <span className="text-indigo-500">Analytics</span>
-                            </h5>
-                            {isLineDataEmpty && (
-                                <span className="text-[8px] bg-amber-500/10 text-amber-600 px-2 py-1 rounded-md font-bold animate-pulse">
-                                    DEMO DATA
-                                </span>
-                            )}
-                        </div>
-                        <Line 
-                            data={lineData} 
-                            options={{ 
-                                maintainAspectRatio: false, 
-                                responsive: true,
-                                scales: { y: { beginAtZero: true, min: 0, ticks: { stepSize: 1 } } },
-                                plugins: { legend: { display: false } }
-                            }} 
-                        />
-                    </div>
-
-                    {/* Doughnut Chart Section */}
-                    <div className="h-[250px] w-full pt-10 border-t border-neutral-100 dark:border-white/5">
-                        <div className="flex justify-between items-center mb-4">
-                            <h5 className="text-[10px] font-black uppercase text-neutral-400 italic">
-                                Status <span className="text-indigo-500">Ratio</span>
-                            </h5>
-                            {isDoughnutEmpty && (
-                                <span className="text-[8px] bg-amber-500/10 text-amber-600 px-2 py-1 rounded-md font-bold">
-                                    NO DATA YET
-                                </span>
-                            )}
-                        </div>
-                        <div className="h-full flex justify-center pb-6">
-                            <Doughnut data={doughnutData} options={{ maintainAspectRatio: false, responsive: true }} />
-                        </div>
-                    </div>
-
-                    {isLineDataEmpty && (
-                        <p className="text-center text-[9px] text-neutral-400 italic mt-4">
-                            *Belum ada aktivitas laporan minggu ini. Menampilkan visualisasi contoh.
-                        </p>
-                    )}
-                </div>
-            );
+            return <AnalyticsDashboard 
+                reportChartData={reportChartData}
+                statusStats={statusStats}
+                lineData={lineData}
+                doughnutData={doughnutData}
+            />;
+        case 'genres':
+            return <ManageGenreForm genres={genres} />;
         case 'danger':
             return <DeleteUserForm />;
         default:
