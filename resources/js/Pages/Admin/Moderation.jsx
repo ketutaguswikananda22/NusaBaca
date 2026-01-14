@@ -1,10 +1,11 @@
+import { useEffect } from 'react'; // Tambahkan useEffect di sini
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import Swal from 'sweetalert2';
 import { router } from '@inertiajs/react';
 
-export default function Moderation({ auth, books }) {
+export default function Moderation({ auth, books, auditLogs }) {
     const { delete: destroy } = useForm();
     const [searchTerm, setSearchTerm] = useState('');
     
@@ -16,6 +17,22 @@ export default function Moderation({ auth, books }) {
         book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         book.user?.name.toLowerCase().includes(searchTerm.toLowerCase())
     ) : [];
+
+    // Tambahkan ini di dalam fungsi Moderation (misal setelah baris 10)
+const [logs, setLogs] = useState(auditLogs || []);
+
+useEffect(() => {
+    if (window.Echo) {
+        window.Echo.channel('admin-logs')
+            .listen('.AuditUpdated', (e) => { // Pakai titik (.)
+                console.log('New log received:', e.log);
+                setLogs((prevLogs) => [e.log, ...prevLogs].slice(0, 4));
+            });
+    }
+    return () => {
+        if (window.Echo) window.Echo.leave('admin-logs');
+    };
+}, []);
 
     const handleApprove = (bookId, bookTitle) => {
         Swal.fire({
@@ -241,6 +258,27 @@ export default function Moderation({ auth, books }) {
                     </div>
                 </div>
             )}
+            {/* Tambahkan ini di bawah div penutup tabel */}
+<div className="mt-12 bg-slate-950 rounded-[32px] p-8 shadow-2xl overflow-hidden relative">
+    <div className="flex items-center gap-3 mb-6">
+        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+        <h3 className="text-white font-bold tracking-tight">Recent System Audit</h3>
+    </div>
+    
+    <div className="space-y-4">
+        {logs.length > 0 ? logs.map((log, i) => (
+            <div key={i} className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all">
+                <span className="text-xl">{log.type === 'danger' ? '🚫' : '✅'}</span>
+                <div>
+                    <p className="text-[11px] text-emerald-400 font-black uppercase">{log.action_name}</p>
+                    <p className="text-sm text-slate-300">{log.details}</p>
+                </div>
+            </div>
+        )) : (
+            <p className="text-slate-500 italic text-sm">Waiting for new activity...</p>
+        )}
+    </div>
+</div>
         </AuthenticatedLayout>
     );
 }

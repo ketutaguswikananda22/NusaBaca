@@ -27,7 +27,7 @@ ChartJS.register(
     ArcElement, Title, Tooltip, Legend, Filler
 );
 
-export default function Edit({ auth, mustVerifyEmail, status, authors = [], stats = {}, userData, conversations = [], reportChartData, statusStats, genres = [] }) {
+export default function Edit({ auth, mustVerifyEmail, status, authors = [], stats = {}, userData, conversations = [], reportChartData, statusStats, genres = [], auditLogs }) {
     // Gunakan userData dari controller jika ada, jika tidak gunakan auth.user
     const user = userData || auth.user;
     const fileInputRef = useRef(null);
@@ -124,6 +124,7 @@ const renderActiveForm = (lineData, doughnutData) => {
                         fileInputRef={fileInputRef} 
                         theme={theme}
                         currentTime={currentTime}
+                        auditLogs={auditLogs}
                     />
                 ) : (
                     <div className="flex flex-col">

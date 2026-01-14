@@ -87,7 +87,7 @@ export default function AuthenticatedLayout({ header, children }) {
 
                                 {user?.role === 'admin' && (
                                     <>
-                                        <NavLink href={route('admin.index')} active={route().current('admin.index')}>
+                                        <NavLink href={route('admin.moderation')} active={route().current('admin.index')}>
                                             Admin Center
                                         </NavLink>
                                         <NavLink href={route('admin.writer.applications')} active={route().current('admin.writer.applications')}>

@@ -7,6 +7,7 @@ use App\Models\Book;
 use App\Models\User;
 use App\Models\Message;
 use App\Models\Genre; // Tambahkan ini agar sistem kenal tabel genre
+use App\Models\AuditLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -101,6 +102,7 @@ $conversations = Message::where('user_id', $user->id)
                 'totalBooks' => (int) Book::count(),
                 'pendingAuthors' => (int) User::where('role', 'user')->count(), 
             ],
+            'auditLogs' => \App\Models\AuditLog::latest()->take(4)->get(),
         ]);
     }
 

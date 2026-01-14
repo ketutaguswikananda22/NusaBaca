@@ -28,8 +28,41 @@ export default function AdminDashboard({
     setActiveTab, 
     renderActiveForm, 
     fileInputRef,
-    currentTime 
+    currentTime,
+    auditLogs: initialLogs
 }) {
+    const [logs, setLogs] = useState(initialLogs || []);
+    console.log("Data awal logs dari controller:", initialLogs);
+
+    useEffect(() => {
+        if (window.Echo) {
+            console.log('Mulai mendengarkan channel: admin-logs');
+            
+            const channel = window.Echo.channel('admin-logs');
+            
+            // Gunakan .AuditUpdated (dengan titik) karena kamu pakai broadcastAs()
+            channel.listen('.AuditUpdated', (e) => {
+                console.log('ADA EVENT MASUK:', e);
+                
+                setLogs((prevLogs) => {
+                    // Cek agar tidak ada data ganda berdasarkan ID
+                    const isExist = prevLogs.some(log => log.id === e.log.id);
+                    if (isExist) return prevLogs;
+
+                    // Tambah ke paling atas dan ambil 6 terbaru
+                    const newLogs = [e.log, ...prevLogs];
+                    return newLogs.slice(0, 6);
+                });
+            });
+
+            // CLEANUP: Sangat penting agar tidak dizzy/double listener
+            return () => {
+                window.Echo.leave('admin-logs');
+                console.log('Meninggalkan channel: admin-logs');
+            };
+        }
+    }, []);
+
 
     const handleUnban = (id, name) => {
         Swal.fire({
@@ -228,7 +261,7 @@ export default function AdminDashboard({
                     </div>
                 </div>
 
-                {/* 9. System Integrity & Audit (KANAN BAWAH - Di bawah Author Management) */}
+                {/* 9. System Integrity & Audit */}
                 <div className={`md:col-span-2 ${theme?.card} h-[500px] rounded-[2.5rem] p-10 border border-white/5 shadow-2xl relative overflow-hidden flex flex-col justify-center min-h-[550px]`}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12 relative z-10">
                         {/* LEFT COLUMN: SYSTEM INTEGRITY */}
@@ -265,11 +298,9 @@ export default function AdminDashboard({
                                 </div>
                             </div>
                                 
-                            {/* UPTIME LINE GRAPH (Sesuai Referensi) */}
                             <div className="pt-6 border-t border-white/5">
                                 <p className="text-[10px] font-black uppercase text-neutral-300 mb-4 tracking-widest">Uptime (24h)</p>
                                 <div className="relative h-16 w-full flex items-center">
-                                    {/* SVG Line Graph agar persis gambar */}
                                     <svg className="w-full h-full" viewBox="0 0 200 60">
                                         <path 
                                             d="M0,50 Q20,20 40,45 T80,30 T120,50 T160,20 T200,40" 
@@ -285,45 +316,56 @@ export default function AdminDashboard({
                                 </div>
                             </div>
                         </div>
-                                    
-                        {/* RIGHT COLUMN: RECENT AUDIT (Sesuai Referensi) */}
-                        <div className="relative">
-                            <div className="mb-8 pl-4">
-                                <h4 className="text-[12px] font-black uppercase text-neutral-400 tracking-[0.3em] mb-1">Recent Audit</h4>
-                                <p className="text-[10px] text-neutral-500 font-medium tracking-tight">Latest administrative actions</p>
-                            </div>
-                                    
-                            {/* Dashed Vertical Line with Arrows */}
-                            <div className="absolute left-[20px] top-[80px] bottom-10 w-[1px] border-l border-dashed border-indigo-500/40 z-0">
-                                <div className="absolute -top-1 -left-[4px] text-[8px] text-indigo-500/50">▲</div>
-                                <div className="absolute -bottom-1 -left-[4px] text-[8px] text-indigo-500/50">▼</div>
-                            </div>
-                                    
-                            <div className="space-y-10 relative z-10 pl-4">
-                                {[
-                                    { action: 'GENRE ADDED', time: '2m ago', desc: 'Added "Cyberpunk"', color: 'text-indigo-400', icon: '🏷️' },
-                                    { action: 'USER SUSPENDED', time: '2h ago', desc: 'UID: #8829', color: 'text-red-400', icon: '🚫' },
-                                    { action: 'BACKUP', time: '3h ago', desc: 'Auto-snapshot to S3', color: 'text-amber-400', icon: '💾' },
-                                    { action: 'ADMIN LOGIN', time: '10m ago', desc: 'from 192.168.1.1', color: 'text-blue-400', icon: '👤' }
-                                ].map((log, i) => (
-                                    <div key={i} className="flex gap-6 items-start group">
-                                        {/* Bulatan di atas garis */}
-                                        <div className="mt-1.5 w-3 h-3 rounded-full bg-[#111] border-2 border-indigo-500 shrink-0 z-20"></div>
+                        {/*Recent Audit - Dinamis dengan Laravel Reverb */}
+<div className="relative">
+    <div className="mb-8 pl-4">
+        <h4 className="text-[12px] font-black uppercase text-indigo-400 tracking-[0.3em] mb-1">Recent Audit</h4>
+        <p className="text-[10px] text-neutral-500 font-medium tracking-tight">Latest administrative actions</p>
+    </div>
+            
+    <div className="absolute left-[20px] top-[80px] bottom-10 w-[1px] border-l border-dashed border-indigo-500/40 z-0">
+        <div className="absolute -top-1 -left-[4px] text-[8px] text-indigo-500/50">▲</div>
+        <div className="absolute -bottom-1 -left-[4px] text-[8px] text-indigo-500/50">▼</div>
+    </div>
+            
+    <div className="space-y-10 relative z-10 pl-4">
+        {logs.length > 0 ? logs.map((log, i) => (
+            <div key={log.id || i} className="flex gap-6 items-start group animate-in fade-in slide-in-from-left duration-500">
+                {/* Dot Indikator Dinamis - DITAMBAHKAN KONDISI SUCCESS */}
+               <div className={`mt-1.5 w-3 h-3 rounded-full bg-[#111] border-2 shrink-0 z-20 ${
+                    log.type === 'danger' ? 'border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 
+                    log.type === 'success' ? 'border-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : // <--- TAMBAHKAN INI
+                    log.type === 'warning' ? 'border-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]' : 
+                    'border-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]'
+                }`}></div>
 
-                                        <div className="flex-1">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] opacity-70">{log.icon}</span>
-                                                    <p className="text-[11px] text-white font-black uppercase tracking-tight">{log.action}</p>
-                                                </div>
-                                                <span className="text-[8px] text-neutral-600 font-bold">{log.time}</span>
-                                            </div>
-                                            <p className="text-[10px] text-neutral-500 font-medium ml-6 group-hover:text-neutral-300 transition-colors">{log.desc}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                            {/* Icon Dinamis berdasarkan type - DITAMBAHKAN ICON SUCCESS */}
+                            <span className="text-[10px] opacity-70">
+                                {log.type === 'danger' ? '🚫' : 
+                                 log.type === 'warning' ? '⚠️' : 
+                                 log.type === 'success' ? '✅' : '🏷️'} 
+                            </span>
+                            <p className="text-[11px] text-white font-black uppercase tracking-tight">{log.action_name}</p>
                         </div>
+                        <span className="text-[8px] text-neutral-600 font-bold uppercase tracking-tighter">
+                            {log.time_ago || 'Just Now'}
+                        </span>
+                    </div>
+                    <p className="text-[10px] text-neutral-500 font-medium ml-6 group-hover:text-neutral-300 transition-colors">
+                        {log.details}
+                    </p>
+                </div>
+            </div>
+        )) : (
+            <div className="pl-6 text-[10px] text-neutral-700 italic tracking-widest">
+                Waiting for system activity...
+            </div>
+        )}
+    </div>
+</div>
                             
                     </div>
                 </div>

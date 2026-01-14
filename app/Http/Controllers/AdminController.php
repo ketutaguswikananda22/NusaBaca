@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AuditUpdated;
 use App\Models\Book;
 use App\Models\User;
 use App\Models\WriterApplication;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Report;
+use App\Models\AuditLog;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Mail\BookRejectedMail; // Class Mailable yang baru kita buat
@@ -45,14 +47,10 @@ public function index()
         'pending' => Report::where('status', 'pending')->count(),
         'resolved' => Report::where('status', 'resolved')->count(),
     ];
-    return Inertia::render('Admin/Moderation', [
+    return Inertia::render('Admin/AdminDashboard', [
         'books' => $books,
-        'reportChartData' => [
-        // Ambil label hari dari database, jika kosong kirim array kosong []
-            'labels' => $reportStats->pluck('date')->map(fn($date) => \Carbon\Carbon::parse($date)->format('D')),
-            // Ambil total angka dari database, jika kosong kirim array kosong []
-            'totals' => $reportStats->pluck('total'),
-        ],
+        'auditLogs' => \App\Models\AuditLog::latest()->take(6)->get(),
+        'reportChartData' => [/*....*/],
         'statusStats' => $statusStats, 
         'auth' => ['user' => auth()->user()]
     ]);
@@ -88,8 +86,10 @@ public function index()
 
     return Inertia::render('Admin/Moderation', [
         'books' => $books,
-        'auth' => ['user' => auth()->user()]
+        'auth' => ['user' => auth()->user()],
+        'auditLogs' => \App\Models\AuditLog::latest()->take(6)->get(),
     ]);
+    
 }
 
     public function storeReport(Request $request)
@@ -127,8 +127,17 @@ public function index()
             Mail::to($book->user->email)->send(new BookRejectedMail($book, $request->reason));
         }
 
+        $log = AuditLog::create([
+            'action_name' => 'BOOK REJECTED',
+            'details' => "Buku '{$book->title}' ditolak. Alasan: {$request->reason}",
+            'type' => 'danger',
+        ]);
+
+        broadcast(new AuditUpdated($log));
+
         return back()->with('success', 'Buku telah ditolak dan email pemberitahuan dikirim.');
     }
+
     public function unban($id)
     {
         $user = User::findOrFail($id);

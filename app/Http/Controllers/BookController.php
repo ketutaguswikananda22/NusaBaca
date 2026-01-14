@@ -250,24 +250,37 @@ class BookController extends Controller
         ]);
     }
 
-    public function approve($id)
-    {
-        if (Auth::user()->role !== 'admin') {
-            abort(403);
-        }
-    
-        $book = Book::with('user')->findOrFail($id);
-        $book->update(['status' => 'published']);
-    
-        try {
-            Mail::to($book->user->email)->send(new BookStatusNotification($book, 'published'));
-            Log::info("Email Approve: Berhasil dikirim ke " . $book->user->email);
-        } catch (\Exception $e) {
-            Log::error("Email Approve: Gagal kirim. " . $e->getMessage());
-        }
-    
-        return redirect()->back()->with('message', 'Buku berhasil diterbitkan!');
+    // Filename: app/Http/Controllers/BookController.php
+
+public function approve($id)
+{
+    if (Auth::user()->role !== 'admin') {
+        abort(403);
     }
+
+    $book = Book::with('user')->findOrFail($id);
+    $book->update(['status' => 'published']);
+
+    // 1. BUAT LOG AUDIT (Agar muncul di dashboard)
+    $log = \App\Models\AuditLog::create([
+        'action_name' => 'BOOK APPROVED',
+        'details' => "Buku '{$book->title}' telah disetujui.",
+        'type' => 'success',
+    ]);
+
+    // 2. KIRIM BROADCAST KE REVERB
+    broadcast(new \App\Events\AuditUpdated($log));
+
+    // 3. KIRIM EMAIL (Proses ini lambat, jadi kita taruh setelah broadcast)
+    try {
+        Mail::to($book->user->email)->send(new BookStatusNotification($book, 'published'));
+        Log::info("Email Approve: Berhasil dikirim ke " . $book->user->email);
+    } catch (\Exception $e) {
+        Log::error("Email Approve: Gagal kirim. " . $e->getMessage());
+    }
+
+    return redirect()->back()->with('message', 'Buku berhasil diterbitkan!');
+}
 
     public function read($id, $part_id)
 {

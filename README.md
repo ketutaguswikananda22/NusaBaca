@@ -28,8 +28,6 @@ Sistem ini menjamin keamanan akun dengan fitur *force-logout* instan. Begitu Adm
 ### 2. Role-Based Access Control (RBAC)
 Pemisahan hak akses yang sangat ketat menggunakan Middleware Laravel untuk tiga level pengguna: **Admin**, **Author**, dan **Pembaca**.
 
-### 3. SEO FRIENDLY WITH GENRE FILTER
-Fitur search yang sudah menerapkan SEO (Search Engine Optimization) dan filter buku berdasarkan genre
 ---
 
 ## 🚀 Fitur Unggulan (Full Feature List)
@@ -49,6 +47,12 @@ Fitur search yang sudah menerapkan SEO (Search Engine Optimization) dan filter b
 ### 🔔 Notification & Interaction
 - **In-App Notifications:** Sistem lonceng notifikasi reaktif di frontend.
 - **Unread Counter:** Sinkronisasi jumlah notifikasi yang belum dibaca antara backend dan frontend melalui global props Inertia.
+
+### ⚡Real-Time Recet Audit Log (New Feature)
+Sistem ini mengimplementasikan **WebSocket** untuk memberikan transparansi administratif secara instan tanpa perlu refresh halaman:
+- **Event-Driven:** Menggunakan Laravel Events (`AuditUpdated`) yang mengimplementasikan `ShouldBroadcastNow`.
+- **WebSocket Server:** Ditenagai oleh **Laravel Reverb** untuk pengiriman data yang sangat cepat.
+- **Client Side:** Menggunakan **Laravel Echo** untuk mendengarkan aktivitas moderasi (Approve/Reject) dan memperbarui tabel Audit secara reaktif.
 
 ---
 
