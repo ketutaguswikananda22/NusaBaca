@@ -15,7 +15,7 @@ export default function BioSection({ user, isEditing, formData, handleChange, jo
                         <div className="space-y-4">
                             <textarea 
                                 name="bio"
-                                value={formData.bio}
+                                value={formData.bio ?? ''}
                                 onChange={handleChange}
                                 className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl p-4 text-sm min-h-[120px] focus:ring-2 focus:ring-[#ff6122]/20"
                                 placeholder="Tulis bio kamu..."
@@ -24,7 +24,7 @@ export default function BioSection({ user, isEditing, formData, handleChange, jo
                                 {['instagram', 'tiktok', 'linkedin', 'twitter', 'website'].map((social) => (
                                     <div key={social} className="relative">
                                         <i className={`fab fa-${social === 'website' ? 'link' : social === 'twitter' ? 'x-twitter' : social} absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400`}></i>
-                                        <input name={social} value={formData[social]} onChange={handleChange} placeholder={`Username ${social}`} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-10 pr-4 py-2 text-sm" />
+                                        <input name={social} value={formData[social] ?? ''} onChange={handleChange} placeholder={`Username ${social}`} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-10 pr-4 py-2 text-sm" />
                                     </div>
                                 ))}
                             </div>

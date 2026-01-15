@@ -24,6 +24,7 @@ class AdminController extends Controller
 
 public function index()
 {
+    // 1. Ambil buku yang sedang pending
     $books = Book::with('user')
         ->where('status', 'pending')
         ->latest()
@@ -40,6 +41,17 @@ public function index()
             ];
         });
 
+    // 2. AMBIL DATA PENULIS (PENTING: Agar poin muncul di UI)
+    $authors = User::whereIn('role', ['penulis', 'admin'])
+    ->select('id', 'name', 'email', 'points', 'status', 'is_banned', 'avatar')
+    ->latest()
+    ->get()
+    ->map(function ($auth) {
+        // Paksa points menjadi integer agar tidak terbaca 0 karena tipe data string
+        $auth->points = (int) ($auth->points ?? 0);
+        return $auth;
+    });
+    // 3. Statistik Laporan (tetap seperti kode kamu)
     $reportStats = Report::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as total'))
         ->where('created_at', '>=', Carbon::now()->subDays(6))
         ->groupBy('date')
@@ -53,12 +65,20 @@ public function index()
 
     $this->checkSystem();
 
+    // 4. Kirim semua data ke Inertia
     return Inertia::render('Admin/AdminDashboard', [
         'books' => $books,
+        'authors' => $authors, // Tambahkan ini
         'auditLogs' => \App\Models\AuditLog::latest()->take(6)->get(),
-        'reportChartData' => [/*....*/],
+        'reportChartData' => $reportStats, // Pastikan ini diisi data asli
         'statusStats' => $statusStats, 
-        'auth' => ['user' => auth()->user()]
+        'auth' => ['user' => auth()->user()],
+        // Tambahkan stats general jika diperlukan oleh StatCards.jsx
+        'stats' => [
+            'pendingAuthors' => WriterApplication::where('status', 'pending')->count(),
+            'totalBooks' => Book::count(),
+            'totalUsers' => User::count(),
+        ]
     ]);
 }
 
@@ -174,7 +194,6 @@ public function index()
         return back();
     }
 
-    // AdminController.php atau sebuah Job/Command
     public function checkSystem()
 {
     // 1. Tentukan Kuota Maksimal (Misal: 500MB dalam Bytes)
@@ -189,11 +208,9 @@ public function index()
             $sizeInBytes += $file->getSize();
         }
     }
-
     // 3. Hitung Persentase
     $percentage = ($sizeInBytes / $maxQuota) * 100;
     $percentage = min(round($percentage, 2), 100); // Maksimal 100%
-
     // 4. Tentukan Status Teks
     $statusText = $percentage >= 90 ? 'FULL' : ($percentage >= 70 ? 'WARNING' : 'AVAILABLE');
 
@@ -201,7 +218,7 @@ public function index()
         'api' => 'OPTIMAL',
         'db' => DB::connection()->getPdo() ? 'HEALTHY' : 'DOWN',
         'storage' => $statusText,
-        'storage_percentage' => $percentage, // Kirim angka ke frontend
+        'storage_percentage' => $percentage, // Kirim ke frontend
     ];
 
     event(new SystemStatusUpdated($status));

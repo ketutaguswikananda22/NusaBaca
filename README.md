@@ -48,7 +48,7 @@ Pemisahan hak akses yang sangat ketat menggunakan Middleware Laravel untuk tiga 
 - **In-App Notifications:** Sistem lonceng notifikasi reaktif di frontend.
 - **Unread Counter:** Sinkronisasi jumlah notifikasi yang belum dibaca antara backend dan frontend melalui global props Inertia.
 
-### ⚡Real-Time Recet Audit Log (New Feature)
+### ⚡Real-Time System Integrity & Recet Audit Log (New Feature)
 Sistem ini mengimplementasikan **WebSocket** untuk memberikan transparansi administratif secara instan tanpa perlu refresh halaman:
 - **Event-Driven:** Menggunakan Laravel Events (`AuditUpdated`) yang mengimplementasikan `ShouldBroadcastNow`.
 - **WebSocket Server:** Ditenagai oleh **Laravel Reverb** untuk pengiriman data yang sangat cepat.
@@ -63,5 +63,11 @@ Sistem ini mengimplementasikan **WebSocket** untuk memberikan transparansi admin
 3. **Frontend Setup:** `npm install && npm run dev`
 4. **Database:** Atur `.env`, lalu jalankan `php artisan migrate --seed`
 5. **Serve:** `php artisan serve`
+---
+
+## Documentation
+<p align="center">
+<img src="Screenshots/documentation.png" alt="Ddmin Dashboard">
+</p>
 ---
 *Dikembangkan oleh **Ketut Agus Wikananda** sebagai project portofolio Fullstack Development.*

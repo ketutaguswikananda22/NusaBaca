@@ -39,11 +39,10 @@ export default function AdminDashboard({
     auditLogs: initialLogs
 }) {
 
-    // Filename: AdminDashboard.jsx
-
+console.log("Cek Data Authors di Dashboard:", authors);
+    
 const [logs, setLogs] = useState(initialLogs || []);
 
-// Pastikan properti awal di sini sinkron dengan yang dipanggil di UI
 const [systemStats, setSystemStats] = useState({
     api: 'OPTIMAL', 
     operational: 'HEALTHY',
@@ -71,7 +70,6 @@ useEffect(() => {
         const statusChannel = window.Echo.channel('system-status');
         statusChannel.listen('SystemStatusUpdated', (e) => {
             console.log('Update Sistem:', e);
-            // Simpan ke state dengan nama yang simpel agar mudah dipanggil di UI
             setSystemStats({
                 api: e.api_gateway,
                 operational: e.operational || 'HEALTHY',

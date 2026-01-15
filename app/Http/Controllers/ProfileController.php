@@ -29,8 +29,7 @@ class ProfileController extends Controller
             'books' => fn($q) => $q->where('status', 'published')->withCount('parts')->withAvg('ratings', 'rating')->latest(),
             'following', 
             'followers', 
-            'readingLists.books'
-        ])->withCount(['books', 'followers', 'following', 'readingLists'])->findOrFail($user->id);
+            'readingLists.books'])->withCount(['books', 'followers', 'following', 'readingLists'])->findOrFail($user->id);
 
         // Ambil pesan utama beserta balasannya untuk user yang sedang login
        // Ambil HANYA pesan utama (parent_id kosong)
@@ -73,23 +72,24 @@ $conversations = Message::where('user_id', $user->id)
 
         // Daftar author lain untuk disarankan
         $authors = User::where('role', '!=', 'admin')
-            ->where('id', '!=', $user->id)
-            ->select('id', 'name', 'email', 'role', 'status', 'avatar')
-            ->addSelect(['last_activity' => DB::table('sessions')
-                ->whereColumn('user_id', 'users.id')
-                ->select('last_activity')
-                ->orderBy('last_activity', 'desc')
-                ->limit(1)
-            ])
-            ->latest()
-            ->get()
-            ->map(function ($author) use ($user) {
-                $author->is_followed = $user->following()->where('following_id', $author->id)->exists();
-                $author->is_online = $author->last_activity && $author->last_activity > now()->subMinutes(5)->getTimestamp();
-                return $author;
-            });
+        ->where('id', '!=', $user->id)
+        ->select('id', 'name', 'email', 'role', 'status', 'avatar', 'points') // <-- Tambahkan 'points'
+        ->addSelect(['last_activity' => DB::table('sessions')
+            ->whereColumn('user_id', 'users.id')
+            ->select('last_activity')
+            ->orderBy('last_activity', 'desc')
+            ->limit(1)
+        ])
+        ->latest()
+        ->get()
+        ->map(function ($author) use ($user) {
+            $author->is_followed = $user->following()->where('following_id', $author->id)->exists();
+            $author->is_online = $author->last_activity && $author->last_activity > now()->subMinutes(5)->getTimestamp();
+            $author->points = (int)($author->points ?? 0); // Pastikan jadi integer
+            return $author;
+        });
 
-        auth()->user()->touch();
+    auth()->user()->touch();
 
         return Inertia::render('Profile/private/Edit', [
             'userData' => $userData,

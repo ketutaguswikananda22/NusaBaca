@@ -241,11 +241,31 @@ export default function UserProfile({ user, conversations, stats, isEditing, set
                             <h1 className="text-5xl font-black mb-2">{user.name}</h1>
                         )}
                         <p className="text-white/70 text-sm mb-8 mt-2">{user.email}</p>
+                       
+
                         {!isEditing && (
-                            <div className="flex gap-4 sm:gap-12 justify-center items-center">
-                                <div className="text-center"><p className="text-3xl font-black leading-none">{user.books_count}</p><p className="text-[10px] uppercase font-bold opacity-60">Karya</p></div>
-                                <div className="text-center"><p className="text-3xl font-black leading-none">{user.followers_count}</p><p className="text-[10px] uppercase font-bold opacity-60">Pengikut</p></div>
-                                <div className="text-center"><p className="text-3xl font-black leading-none">{user.following_count}</p><p className="text-[10px] uppercase font-bold opacity-60">Mengikuti</p></div>
+                            <div className="flex flex-col items-center"> 
+                                <div className="flex gap-4 sm:gap-12 justify-center items-center mb-6">
+                                    <div className="text-center">
+                                        <p className="text-3xl font-black leading-none">{user.books_count}</p>
+                                        <p className="text-[10px] uppercase font-bold opacity-60">Karya</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-3xl font-black leading-none">{user.followers_count}</p>
+                                        <p className="text-[10px] uppercase font-bold opacity-60">Pengikut</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-3xl font-black leading-none">{user.following_count}</p>
+                                        <p className="text-[10px] uppercase font-bold opacity-60">Mengikuti</p>
+                                    </div>
+                                </div>
+                        
+                                {/* --- TAMBAHKAN BAGIAN POIN DI SINI --- */}
+                                <div className="bg-[#ff6122] text-white px-6 py-2 rounded-full shadow-lg flex items-center gap-2 transform hover:scale-105 transition-transform cursor-default">
+                                    <span className="text-lg">⭐</span>
+                                    <span className="text-xl font-black">{user.points ?? 0}</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-widest mt-1">Poin Nusa</span>
+                                </div>
                             </div>
                         )}
                     </div>

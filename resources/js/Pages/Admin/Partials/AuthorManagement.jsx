@@ -44,6 +44,9 @@ const AuthorManagement = ({ authors, theme }) => {
                             <div className="min-w-0">
                                 <p className="text-[12px] font-black truncate">{author.name}</p>
                                 <p className="text-[9px] text-neutral-500 lowercase truncate">{author.email}</p>
+                                <span className="text-[8px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded font-bold uppercase">
+                                  ⭐ {author.points} PTS
+                                </span>
                             </div>
                         </div>
                         <button 

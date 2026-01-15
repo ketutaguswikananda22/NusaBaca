@@ -92,15 +92,17 @@ class BookController extends Controller
             'file_path'   => '',
             'status'      => 'pending',
         ]);
+        
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $user->increment('points', 10);
 
-        // 2. Kirim Notifikasi Email
         try {
             $user = Auth::user();
             
             // Email ke Penulis
             Mail::to($user->email)->send(new BookStatusNotification($book, 'pending'));
 
-            // Email ke Admin (Gunakan email nusabacaa@gmail.com)
             $adminEmail = 'nusabacaa@gmail.com'; 
             Mail::to($adminEmail)->send(new BookStatusNotification($book, 'admin_notification'));
 
@@ -116,7 +118,7 @@ class BookController extends Controller
     {
         $book = Book::findOrFail($id);
         
-        // Pastikan hanya pemilik atau admin yang bisa edit
+        
         if ($book->user_id !== Auth::id() && Auth::user()->role !== 'admin') {
             abort(403);
         }
@@ -139,7 +141,7 @@ class BookController extends Controller
         $book = Book::findOrFail($id);
         
         /** @var \App\Models\User $user */
-        $user = Auth::user(); // Ini sudah benar
+        $user = Auth::user(); 
 
         // PERBAIKAN: Gunakan variabel $user yang didefinisikan di atas, 
         if ($user->id !== $book->user_id && $user->role !== 'admin') {
@@ -261,10 +263,13 @@ public function approve($id)
     $book = Book::with('user')->findOrFail($id);
     $book->update(['status' => 'published']);
 
+    if ($book->user) {
+        $book->user->increment('points', 100);
+    }
     // 1. BUAT LOG AUDIT (Agar muncul di dashboard)
     $log = \App\Models\AuditLog::create([
         'action_name' => 'BOOK APPROVED',
-        'details' => "Buku '{$book->title}' telah disetujui.",
+        'details' => "Buku '{$book->title}' telah disetujui. Penulis ({$book->user->name}) mendapat 100 point.",
         'type' => 'success',
     ]);
 
