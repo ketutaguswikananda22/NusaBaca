@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Events\AuditUpdated;
+use App\Events\SystemStatusUpdated;
+use Illuminate\Support\Facades\File;
 use App\Models\Book;
 use App\Models\User;
 use App\Models\WriterApplication;
@@ -14,6 +16,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Mail\BookRejectedMail; // Class Mailable yang baru kita buat
 use Illuminate\Support\Facades\Mail; // Facade untuk mengirim email
+use Illuminate\Support\Facades\Storage;
 
 
 class AdminController extends Controller
@@ -47,6 +50,9 @@ public function index()
         'pending' => Report::where('status', 'pending')->count(),
         'resolved' => Report::where('status', 'resolved')->count(),
     ];
+
+    $this->checkSystem();
+
     return Inertia::render('Admin/AdminDashboard', [
         'books' => $books,
         'auditLogs' => \App\Models\AuditLog::latest()->take(6)->get(),
@@ -167,4 +173,37 @@ public function index()
         ]);
         return back();
     }
+
+    // AdminController.php atau sebuah Job/Command
+    public function checkSystem()
+{
+    // 1. Tentukan Kuota Maksimal (Misal: 500MB dalam Bytes)
+    $maxQuota = 500 * 1024 * 1024; 
+    
+    // 2. Hitung Ukuran Folder public/storage
+    $storagePath = storage_path('app/public');
+    $sizeInBytes = 0;
+    
+    if (File::exists($storagePath)) {
+        foreach (File::allFiles($storagePath) as $file) {
+            $sizeInBytes += $file->getSize();
+        }
+    }
+
+    // 3. Hitung Persentase
+    $percentage = ($sizeInBytes / $maxQuota) * 100;
+    $percentage = min(round($percentage, 2), 100); // Maksimal 100%
+
+    // 4. Tentukan Status Teks
+    $statusText = $percentage >= 90 ? 'FULL' : ($percentage >= 70 ? 'WARNING' : 'AVAILABLE');
+
+    $status = [
+        'api' => 'OPTIMAL',
+        'db' => DB::connection()->getPdo() ? 'HEALTHY' : 'DOWN',
+        'storage' => $statusText,
+        'storage_percentage' => $percentage, // Kirim angka ke frontend
+    ];
+
+    event(new SystemStatusUpdated($status));
+}
 }

@@ -10,6 +10,7 @@ use App\Http\Controllers\RatingController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\GenreController;
+use App\Events\SystemStatusUpdated;
 use App\Models\Book;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -40,6 +41,37 @@ Route::get('/', function () {
     return Inertia::render('Welcome', [
         'recentBooks' => $recentBooks,
     ]);
+});
+
+// routes/web.php
+Route::get('/tes-error', function () {
+    event(new \App\Events\SystemStatusUpdated([
+        'api' => 'OFFLINE',      // Ini akan merubah API Gateway
+        'operational' => 'DOWN', // Ini akan merubah Operational
+        'db' => 'CRITICAL',      // Ini akan merubah Database
+        'storage' => 'FULL'      // Ini akan merubah S3 Storage
+    ]));
+    return "Semua status dikirim!";
+});
+
+Route::get('/tes-normal', function () {
+    event(new SystemStatusUpdated([
+        'api' => 'OPTIMAL',
+        'db' => 'HEALTHY',
+        'storage' => 'AVAILABLE',
+        'storage_percentage' => 10
+    ]));
+    return "Sinyal NORMAL dikirim!";
+});
+
+Route::get('/tes-full', function () {
+    event(new \App\Events\SystemStatusUpdated([
+        'api' => 'OPTIMAL',
+        'db' => 'HEALTHY',
+        'storage' => 'WARNING',
+        'storage_percentage' => 85 // Coba set ke 85%
+    ]));
+    return "Simulasi Storage 85% terkirim!";
 });
 
 Route::get('/katalog', [BookController::class, 'katalog'])->name('katalog.index');
