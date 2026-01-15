@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Screenshots/nusabaca-logo.png" width="450" alt="NusaBaca Branding">
+  <img src="Screenshots/nusabaca-logo.png" width="300" alt="NusaBaca Branding">
 </p>
 
 # 📚 NusaBaca - Comprehensive Ebook & Moderation Ecosystem
@@ -32,6 +32,12 @@ Pemisahan hak akses yang sangat ketat menggunakan Middleware Laravel untuk tiga 
 
 ## 🚀 Fitur Unggulan (Full Feature List)
 
+### 🎮 Gamification & Points System (New)
+Sistem poin untuk meningkatkan keterlibatan penulis dan pembaca:
+- **Poin Nusa:** Badge poin dinamis yang muncul di profil penulis, disinkronkan langsung dari database.
+- **Real-time Sync:** Menghindari lag data session dengan melakukan query ulang pada `ProfileController`.
+- **Clean UI:** Penanganan error input null menggunakan *nullish coalescing* untuk stabilitas tampilan.
+
 ### 📊 Dashboard & Analytics (Admin)
 - **Data Visualization:** Grafik dinamis yang memantau pertumbuhan buku dan statistik pengguna baru.
 - **Real-time Overview:** Ringkasan aktivitas terbaru langsung di sidebar dashboard.
@@ -48,7 +54,7 @@ Pemisahan hak akses yang sangat ketat menggunakan Middleware Laravel untuk tiga 
 - **In-App Notifications:** Sistem lonceng notifikasi reaktif di frontend.
 - **Unread Counter:** Sinkronisasi jumlah notifikasi yang belum dibaca antara backend dan frontend melalui global props Inertia.
 
-### ⚡Real-Time System Integrity & Recet Audit Log (New Feature)
+### ⚡Real-Time System Integrity & Recet Audit Log 
 Sistem ini mengimplementasikan **WebSocket** untuk memberikan transparansi administratif secara instan tanpa perlu refresh halaman:
 - **Event-Driven:** Menggunakan Laravel Events (`AuditUpdated`) yang mengimplementasikan `ShouldBroadcastNow`.
 - **WebSocket Server:** Ditenagai oleh **Laravel Reverb** untuk pengiriman data yang sangat cepat.
@@ -67,7 +73,9 @@ Sistem ini mengimplementasikan **WebSocket** untuk memberikan transparansi admin
 
 ## Documentation
 <p align="center">
-<img src="Screenshots/documentation.png" alt="Ddmin Dashboard">
+<img src="Screenshots/documentation.png" width="600" alt="Ddmin Dashboard">
 </p>
----
+
+
 *Dikembangkan oleh **Ketut Agus Wikananda** sebagai project portofolio Fullstack Development.*
+---
