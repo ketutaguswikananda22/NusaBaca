@@ -32,11 +32,9 @@ export default function AdminDashboard({
     auditLogs: initialLogs
 }) {
     const [logs, setLogs] = useState(initialLogs || []);
-    console.log("Data awal logs dari controller:", initialLogs);
 
     useEffect(() => {
         if (window.Echo) {
-            console.log('Mulai mendengarkan channel: admin-logs');
             
             const channel = window.Echo.channel('admin-logs');
             
@@ -58,7 +56,6 @@ export default function AdminDashboard({
             // CLEANUP: Sangat penting agar tidak dizzy/double listener
             return () => {
                 window.Echo.leave('admin-logs');
-                console.log('Meninggalkan channel: admin-logs');
             };
         }
     }, []);
@@ -239,19 +236,55 @@ export default function AdminDashboard({
                                     </div>
                                 </div>
                                 <button 
-                                    onClick={() => author.is_banned ? handleUnban(author.id, author.name) : router.post(route('admin.users.toggle', author.id))} 
-                                    className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all border ${author.is_banned ? 'bg-green-500 text-white' : 'text-red-500 border-red-500/10 hover:bg-red-500 hover:text-white'}`}
+                                    onClick={() => {
+                                        // Tentukan pesan berdasarkan status saat ini
+                                        const isSuspended = author.status === 'suspended' || author.is_banned;
+                                        const titleText = isSuspended ? 'Aktifkan Akun?' : 'Tangguhkan Akun?';
+                                        const confirmText = isSuspended 
+                                            ? `Apakah Anda yakin ingin mengaktifkan kembali akun ${author.name}?` 
+                                            : `Apakah Anda yakin ingin menangguhkan akun ${author.name}?`;
+                                    
+                                        // Alert konfirmasi sebelum kirim data
+                                        Swal.fire({
+                                            title: titleText,
+                                            text: confirmText,
+                                            icon: 'warning',
+                                            showCancelButton: true,
+                                            confirmButtonColor: isSuspended ? '#22c55e' : '#ef4444', 
+                                            cancelButtonColor: '#6b7280',
+                                            confirmButtonText: isSuspended ? 'Ya, Aktifkan!' : 'Ya, Tangguhkan!',
+                                            cancelButtonText: 'Batal'
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                // Jalankan router patch hanya jika user klik "Ya"
+                                                router.patch(route('admin.users.toggle', author.id), {}, {
+                                                    preserveScroll: true,
+                                                    onSuccess: () => {
+                                                        Swal.fire({
+                                                            title: 'Berhasil!',
+                                                            text: isSuspended ? 'Akun telah diaktifkan.' : 'Akun telah ditangguhkan.',
+                                                            icon: 'success',
+                                                            confirmButtonColor: '#6366f1'
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }} 
+                                    className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all border ${
+                                        (author.status === 'suspended' || author.is_banned)
+                                            ? 'bg-green-500 text-white border-green-500' 
+                                            : 'text-red-500 border-red-500/10 hover:bg-red-500 hover:text-white'
+                                    }`}
                                 >
-                                    {author.is_banned ? 'Unban' : 'Suspend'}
+                                    {(author.status === 'suspended' || author.is_banned) ? 'Active' : 'Suspend'}
                                 </button>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* --- BARIS BAWAH --- */}
-
-                {/* 8. Active Form Section (KIRI BAWAH - Tetap di bawah Book & Member) */}
+                {/* 8. Active Form Section */}
                 <div className={`md:col-span-2 ${theme?.card} rounded-[3rem] p-10 border shadow-2xl overflow-hidden`}>
                     <h4 className="text-2xl font-black mb-8 italic uppercase tracking-tighter text-indigo-500 border-b pb-4 border-neutral-100 dark:border-white/5">
                         {activeTab} <span className="text-neutral-400 font-light italic">Settings</span>
@@ -262,7 +295,7 @@ export default function AdminDashboard({
                 </div>
 
                 {/* 9. System Integrity & Audit */}
-                <div className={`md:col-span-2 ${theme?.card} h-[500px] rounded-[2.5rem] p-10 border border-white/5 shadow-2xl relative overflow-hidden flex flex-col justify-center min-h-[550px]`}>
+                <div className={`md:col-span-2 ${theme?.card} rounded-[2.5rem] p-10 border border-white/5 shadow-2xl relative overflow-hidden flex flex-col justify-center min-h-[550px]`}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12 relative z-10">
                         {/* LEFT COLUMN: SYSTEM INTEGRITY */}
                         <div className="space-y-8 flex flex-col justify-between">
@@ -317,55 +350,54 @@ export default function AdminDashboard({
                             </div>
                         </div>
                         {/*Recent Audit - Dinamis dengan Laravel Reverb */}
-<div className="relative">
-    <div className="mb-8 pl-4">
-        <h4 className="text-[12px] font-black uppercase text-indigo-400 tracking-[0.3em] mb-1">Recent Audit</h4>
-        <p className="text-[10px] text-neutral-500 font-medium tracking-tight">Latest administrative actions</p>
-    </div>
-            
-    <div className="absolute left-[20px] top-[80px] bottom-10 w-[1px] border-l border-dashed border-indigo-500/40 z-0">
-        <div className="absolute -top-1 -left-[4px] text-[8px] text-indigo-500/50">▲</div>
-        <div className="absolute -bottom-1 -left-[4px] text-[8px] text-indigo-500/50">▼</div>
-    </div>
-            
-    <div className="space-y-10 relative z-10 pl-4">
-        {logs.length > 0 ? logs.map((log, i) => (
-            <div key={log.id || i} className="flex gap-6 items-start group animate-in fade-in slide-in-from-left duration-500">
-                {/* Dot Indikator Dinamis - DITAMBAHKAN KONDISI SUCCESS */}
-               <div className={`mt-1.5 w-3 h-3 rounded-full bg-[#111] border-2 shrink-0 z-20 ${
-                    log.type === 'danger' ? 'border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 
-                    log.type === 'success' ? 'border-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : // <--- TAMBAHKAN INI
-                    log.type === 'warning' ? 'border-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]' : 
-                    'border-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]'
-                }`}></div>
-
-                <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                            {/* Icon Dinamis berdasarkan type - DITAMBAHKAN ICON SUCCESS */}
-                            <span className="text-[10px] opacity-70">
-                                {log.type === 'danger' ? '🚫' : 
-                                 log.type === 'warning' ? '⚠️' : 
-                                 log.type === 'success' ? '✅' : '🏷️'} 
-                            </span>
-                            <p className="text-[11px] text-white font-black uppercase tracking-tight">{log.action_name}</p>
+                        <div className="relative">
+                            <div className="mb-8 pl-4">
+                                <h4 className="text-[12px] font-black uppercase text-indigo-400 tracking-[0.3em] mb-1">Recent Audit</h4>
+                                <p className="text-[10px] text-neutral-500 font-medium tracking-tight">Latest administrative actions</p>
+                            </div>
+                                    
+                            <div className="absolute left-[20px] top-[80px] bottom-10 w-[1px] border-l border-dashed border-indigo-500/40 z-0">
+                                <div className="absolute -top-1 -left-[4px] text-[8px] text-indigo-500/50">▲</div>
+                                <div className="absolute -bottom-1 -left-[4px] text-[8px] text-indigo-500/50">▼</div>
+                            </div>
+                                    
+                            <div className="space-y-10 relative z-10 pl-4">
+                                {logs.length > 0 ? logs.map((log, i) => (
+                                    <div key={log.id || i} className="flex gap-6 items-start group animate-in fade-in slide-in-from-left duration-500">
+                                        {/* Dot Indikator Dinamis - DITAMBAHKAN KONDISI SUCCESS */}
+                                    <div className={`mt-1.5 w-3 h-3 rounded-full bg-[#111] border-2 shrink-0 z-20 ${
+                                            log.type === 'danger' ? 'border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 
+                                            log.type === 'success' ? 'border-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : // <--- TAMBAHKAN INI
+                                            log.type === 'warning' ? 'border-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]' : 
+                                            'border-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]'}`}>
+                                    </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <div className="flex items-center gap-2">
+                                                    {/* Icon Dinamis berdasarkan type - DITAMBAHKAN ICON SUCCESS */}
+                                                    <span className="text-[10px] opacity-70">
+                                                        {log.type === 'danger' ? '🚫' : 
+                                                        log.type === 'warning' ? '⚠️' : 
+                                                        log.type === 'success' ? '✅' : '🏷️'} 
+                                                    </span>
+                                                    <p className="text-[11px] text-white font-black uppercase tracking-tight">{log.action_name}</p>
+                                                </div>
+                                                <span className="text-[8px] text-neutral-600 font-bold uppercase tracking-tighter">
+                                                    {log.time_ago || 'Just Now'}
+                                                </span>
+                                            </div>
+                                            <p className="text-[10px] text-neutral-500 font-medium ml-6 group-hover:text-neutral-300 transition-colors">
+                                                {log.details}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="pl-6 text-[10px] text-neutral-700 italic tracking-widest">
+                                        Waiting for system activity...
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        <span className="text-[8px] text-neutral-600 font-bold uppercase tracking-tighter">
-                            {log.time_ago || 'Just Now'}
-                        </span>
-                    </div>
-                    <p className="text-[10px] text-neutral-500 font-medium ml-6 group-hover:text-neutral-300 transition-colors">
-                        {log.details}
-                    </p>
-                </div>
-            </div>
-        )) : (
-            <div className="pl-6 text-[10px] text-neutral-700 italic tracking-widest">
-                Waiting for system activity...
-            </div>
-        )}
-    </div>
-</div>
                             
                     </div>
                 </div>

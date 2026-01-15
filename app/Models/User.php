@@ -31,7 +31,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'instagram','website','location','gender',
         'twitter','points','rating','role','status',
         'profile_bg_color','profile_bg_image', 'instagram',
-        'tiktok', 'linkedin', 'twitter'
+        'tiktok', 'linkedin', 'twitter', 'is_banned'
     ];
 
     protected $appends = [

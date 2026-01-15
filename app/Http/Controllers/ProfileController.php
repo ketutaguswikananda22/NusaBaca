@@ -253,13 +253,6 @@ $conversations = Message::where('user_id', $user->id)
         return back()->with('status', 'unfollowed');
     }
 
-    public function toggleUserStatus(User $user)
-    {
-        $user->status = ($user->status === 'active') ? 'suspended' : 'active';
-        $user->save();
-        return redirect()->back();
-    }
-
     public function destroy(Request $request): RedirectResponse
     {
         $request->validate(['password' => ['required', 'current_password']]);

@@ -258,27 +258,6 @@ useEffect(() => {
                     </div>
                 </div>
             )}
-            {/* Tambahkan ini di bawah div penutup tabel */}
-<div className="mt-12 bg-slate-950 rounded-[32px] p-8 shadow-2xl overflow-hidden relative">
-    <div className="flex items-center gap-3 mb-6">
-        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-        <h3 className="text-white font-bold tracking-tight">Recent System Audit</h3>
-    </div>
-    
-    <div className="space-y-4">
-        {logs.length > 0 ? logs.map((log, i) => (
-            <div key={i} className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all">
-                <span className="text-xl">{log.type === 'danger' ? '🚫' : '✅'}</span>
-                <div>
-                    <p className="text-[11px] text-emerald-400 font-black uppercase">{log.action_name}</p>
-                    <p className="text-sm text-slate-300">{log.details}</p>
-                </div>
-            </div>
-        )) : (
-            <p className="text-slate-500 italic text-sm">Waiting for new activity...</p>
-        )}
-    </div>
-</div>
         </AuthenticatedLayout>
     );
 }

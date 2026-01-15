@@ -59,10 +59,30 @@ public function index()
     public function toggleUserStatus($id)
     {
         $user = User::findOrFail($id);
-        $user->status = ($user->status === 'active') ? 'suspended' : 'active';
-        $user->save();
 
-        return back();
+        if ($user->status === 'active') {
+            $user->status = 'suspended';
+            $user->is_banned = true;
+            $action = 'USER SUSPENDED';
+            $type = 'danger';
+        } else {
+            $user->status = 'active';
+            $user->is_banned = false;
+            $action = 'USER ACTIVE';
+            $type = 'success';
+        }
+        $user->save();
+        $user->refresh();
+
+        $log = AuditLog::create([
+            'action_name' => $action,
+            'details' => "Admin mengubah status akun {$user->name} menjadi {$user->status}.",
+            'type' => $type,
+        ]);
+
+        broadcast(new \App\Events\AuditUpdated($log));
+
+        return back()->with('success', 'Status akun ' . $user->name . ' berhasil diubah menjadi ' . $user->status);
     }
 
     public function moderationIndex()

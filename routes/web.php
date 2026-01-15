@@ -178,7 +178,7 @@ Route::get('/settings/profile', function() {
         // Users & Writers
         Route::get('/writer-applications', [WriterApplicationController::class, 'adminIndex'])->name('writer.applications');
         Route::post('/writer-applications/{id}', [WriterApplicationController::class, 'updateStatus'])->name('writer.updateStatus');
-        Route::post('/users/{id}/toggle', [AdminController::class, 'toggleUserStatus'])->name('users.toggle');
+        Route::patch('/users/{id}/toggle', [AdminController::class, 'toggleUserStatus'])->name('users.toggle');
         Route::patch('/users/{id}/unban', [AdminController::class, 'unban'])->name('users.unban');
     });
 });
