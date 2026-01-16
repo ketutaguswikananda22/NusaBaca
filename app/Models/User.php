@@ -29,7 +29,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'name', 'email','password','avatar', 'bio',
         'instagram','website','location','gender',
-        'twitter','points','rating','role','status',
+        'twitter','rating','role','status',
         'profile_bg_color','profile_bg_image', 'instagram',
         'tiktok', 'linkedin', 'twitter', 'is_banned'
     ];

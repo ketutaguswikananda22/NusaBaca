@@ -71,48 +71,46 @@ class BookController extends Controller
     }
 
    public function store(Request $request)
-    {
-        $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'required|string',
-            'genre'       => 'required|array|min:1',
-            'cover'       => 'required|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+{
+    $request->validate([
+        'title'       => 'required|string|max:255',
+        'description' => 'required|string',
+        'genre'       => 'required|array|min:1',
+        'cover'       => 'required|image|mimes:jpeg,png,jpg|max:2048',
+    ]);
 
-        // Simpan file cover
+    return DB::transaction(function () use ($request) {
         $path = $request->file('cover')->store('books/covers', 'public');
 
-        // 1. Simpan ke Database
         $book = Book::create([
-            'user_id'     => Auth::id(),
-            'title'       => $request->title,
+            'user_id'    => Auth::id(),
+            'title'      => $request->title,
             'description' => $request->description,
-            'genre'       => $request->genre, 
-            'cover_path'  => $path,
-            'file_path'   => '',
-            'status'      => 'pending',
+            'genre'      => $request->genre, 
+            'cover_path' => $path,
+            'file_path' => 'default_file_path',
+            'status'     => 'pending',
         ]);
         
         /** @var \App\Models\User $user */
         $user = Auth::user();
         $user->increment('points', 10);
 
-        try {
-            $user = Auth::user();
-            
-            // Email ke Penulis
-            Mail::to($user->email)->send(new BookStatusNotification($book, 'pending'));
+        $user->notify(new \App\Notifications\BookStatusNotification($book, 'pending'));
 
+        try {
+            // Email ke Penulis dan Admin
+            Mail::to($user->email)->send(new BookStatusNotification($book, 'pending'));
             $adminEmail = 'nusabacaa@gmail.com'; 
             Mail::to($adminEmail)->send(new BookStatusNotification($book, 'admin_notification'));
-
-            Log::info("Email Store: Berhasil dikirim ke penulis dan admin.");
+            Log::info("Email Store: Berhasil dikirim.");
         } catch (\Exception $e) {
             Log::error("Email Store: Gagal kirim email. " . $e->getMessage());
         }
 
-        return redirect()->route('author.books')->with('message', 'Karya berhasil dikirim dan menunggu moderasi!');
-    }
+        return redirect()->route('author.books')->with('message', 'Karya berhasil dikirim!');
+    }); // <--- WAJIB ADA INI UNTUK MENUTUP DB::transaction
+} // <--- WAJIB ADA INI UNTUK MENUTUP function store
 
     public function edit($id)
     {
@@ -189,6 +187,19 @@ class BookController extends Controller
         ]);
     }
 
+    public function bookHistory()
+    {
+        // Ambil data buku milik user yang login
+        $books = Book::where('user_id', Auth::id())
+            ->select('id', 'title', 'status', 'rejection_reason', 'updated_at')
+            ->latest('updated_at')
+            ->get(); // Menggunakan get() agar menjadi array murni untuk .map() di React
+
+        return Inertia::render('Author/BookHistory', [
+            'books' => $books
+        ]);
+    }
+    
     public function show($id)
     {
         Book::where('id', $id)->increment('views');
@@ -265,6 +276,8 @@ public function approve($id)
 
     if ($book->user) {
         $book->user->increment('points', 100);
+
+        $book->user->notify(new \App\Notifications\BookStatusNotification($book, 'published'));
     }
     // 1. BUAT LOG AUDIT (Agar muncul di dashboard)
     $log = \App\Models\AuditLog::create([

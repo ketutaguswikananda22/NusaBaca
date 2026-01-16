@@ -39,7 +39,6 @@ export default function AdminDashboard({
     auditLogs: initialLogs
 }) {
 
-console.log("Cek Data Authors di Dashboard:", authors);
     
 const [logs, setLogs] = useState(initialLogs || []);
 
@@ -57,7 +56,7 @@ useEffect(() => {
         // Listener untuk Admin Logs
         const channel = window.Echo.channel('admin-logs');            
         channel.listen('.AuditUpdated', (e) => {
-            console.log('ADA EVENT MASUK:', e);
+            //console.log('ADA EVENT MASUK:', e);
             setLogs((prevLogs) => {
                 const isExist = prevLogs.some(log => log.id === e.log.id);
                 if (isExist) return prevLogs;
@@ -69,7 +68,7 @@ useEffect(() => {
         // Listener untuk System Status
         const statusChannel = window.Echo.channel('system-status');
         statusChannel.listen('SystemStatusUpdated', (e) => {
-            console.log('Update Sistem:', e);
+            //console.log('Update Sistem:', e);
             setSystemStats({
                 api: e.api_gateway,
                 operational: e.operational || 'HEALTHY',

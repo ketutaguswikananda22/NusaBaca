@@ -51,7 +51,7 @@ class AktivitasNotifikasi extends Notification
         return [
             'title' => $this->details['title'],
             'message' => $this->details['message'],
-            'url' => $this->details['url'] ?? '#',
+            'url' => $this->details['url'] ?? route('reports.history'),
             'type' => $this->details['type'] ?? 'info',
         ];
     }

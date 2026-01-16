@@ -31,7 +31,7 @@ class ProfileController extends Controller
             'followers', 
             'readingLists.books'])->withCount(['books', 'followers', 'following', 'readingLists'])->findOrFail($user->id);
 
-        // Ambil pesan utama beserta balasannya untuk user yang sedang login
+        
        // Ambil HANYA pesan utama (parent_id kosong)
 $conversations = Message::where('user_id', $user->id)
     ->whereNull('parent_id') // <--- WAJIB ADA AGAR TIDAK TERPISAH

@@ -73,7 +73,6 @@ public function index()
         'reportChartData' => $reportStats, // Pastikan ini diisi data asli
         'statusStats' => $statusStats, 
         'auth' => ['user' => auth()->user()],
-        // Tambahkan stats general jika diperlukan oleh StatCards.jsx
         'stats' => [
             'pendingAuthors' => WriterApplication::where('status', 'pending')->count(),
             'totalBooks' => Book::count(),
@@ -167,6 +166,10 @@ public function index()
             'status' => 'rejected',
             'rejection_reason' => $request->reason
         ]);
+        
+        if ($book->user) {
+            $book->user->notify(new \App\Notifications\BookStatusNotification($book, 'rejected'));
+        }
 
         // Kirim email ke penulis
         if ($book->user && $book->user->email) {
