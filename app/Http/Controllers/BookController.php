@@ -26,15 +26,15 @@ class BookController extends Controller
      */
   private function formatCoverPath($path)
 {
-    if (!$path) return null;
+    if (!$path) return asset('image/default-cover.jpg');
 
     if (filter_var($path, FILTER_VALIDATE_URL)) {
         return $path;
     }
 
     // Bersihkan path awal
-    $cleanPath = ltrim($path, '/');
-    $cleanPath = str_replace(['storage/', 'public/'], '', $cleanPath);
+    $cleanPath = trim($path, '/');
+    $cleanPath = preg_replace('/^(storage|public)\//', '', $cleanPath);
 
     // CEK FOLDER:
     // Jika path diawali 'covers/' tapi belum ada 'books/' di depannya
@@ -42,8 +42,11 @@ class BookController extends Controller
         $cleanPath = 'books/' . $cleanPath;
     } 
     // Jika path polos (langsung nama file), asumsikan ada di folder lengkap
-    else if (!str_starts_with($cleanPath, 'books/')) {
-        $cleanPath = 'books/covers/' . $cleanPath;
+    else if (!str_starts_with($cleanPath, 'covers/')) {
+        $cleanPath = 'books/' . $cleanPath;
+    }
+    else {
+        $cleanPath = 'books/covers' . $cleanPath;
     }
 
     return asset('storage/' . $cleanPath);
@@ -96,7 +99,7 @@ class BookController extends Controller
         $user = Auth::user();
         $user->increment('points', 10);
 
-        $user->notify(new \App\Notifications\BookStatusNotification($book, 'pending'));
+        $user->notify(new \App\Notifications\BookStatusNotification($book, 'pending', 'user'));
 
         try {
             // Email ke Penulis dan Admin
@@ -186,19 +189,6 @@ class BookController extends Controller
             'genres' => Genre::all(),
         ]);
     }
-
-    public function bookHistory()
-    {
-        // Ambil data buku milik user yang login
-        $books = Book::where('user_id', Auth::id())
-            ->select('id', 'title', 'status', 'rejection_reason', 'updated_at')
-            ->latest('updated_at')
-            ->get(); // Menggunakan get() agar menjadi array murni untuk .map() di React
-
-        return Inertia::render('Author/BookHistory', [
-            'books' => $books
-        ]);
-    }
     
     public function show($id)
     {
@@ -263,7 +253,6 @@ class BookController extends Controller
         ]);
     }
 
-    // Filename: app/Http/Controllers/BookController.php
 
 public function approve($id)
 {
@@ -272,32 +261,32 @@ public function approve($id)
     }
 
     $book = Book::with('user')->findOrFail($id);
-    $book->update(['status' => 'published']);
-
-    if ($book->user) {
-        $book->user->increment('points', 100);
-
-        $book->user->notify(new \App\Notifications\BookStatusNotification($book, 'published'));
+    if ($book->status === 'published') {
+        return redirect()->back()->with('error', 'Buku sudah diterbitkan');
     }
-    // 1. BUAT LOG AUDIT (Agar muncul di dashboard)
-    $log = \App\Models\AuditLog::create([
-        'action_name' => 'BOOK APPROVED',
-        'details' => "Buku '{$book->title}' telah disetujui. Penulis ({$book->user->name}) mendapat 100 point.",
-        'type' => 'success',
-    ]);
+    return DB::transaction(function () use ($book) {
+        $book->update(['status' => 'published']);
 
-    // 2. KIRIM BROADCAST KE REVERB
-    broadcast(new \App\Events\AuditUpdated($log));
+        if ($book->user) {
+            $book->user->increment('points', 100);
+            $book->user->notify(new \App\Notifications\BookStatusNotification($book, 'published', 'user'));
+        }
+        $log = \App\Models\AuditLog::create([
+            'action_name' => 'BOOK APPROVED',
+            'details' => "Buku `{$book->title}` telah diterbitkan, Penulis ({$book->user->name}) mendapat +100 point.",
+            'type' => 'success',
+        ]);
 
-    // 3. KIRIM EMAIL (Proses ini lambat, jadi kita taruh setelah broadcast)
-    try {
-        Mail::to($book->user->email)->send(new BookStatusNotification($book, 'published'));
-        Log::info("Email Approve: Berhasil dikirim ke " . $book->user->email);
-    } catch (\Exception $e) {
-        Log::error("Email Approve: Gagal kirim. " . $e->getMessage());
-    }
+        broadcast(new \App\Events\AuditUpdated($log));
 
-    return redirect()->back()->with('message', 'Buku berhasil diterbitkan!');
+        try {
+            Mail::to($book->user->email)->send(new BookStatusNotification($book, 'published'));
+        } catch (\Exception $e) {
+            Log::error("Email Approve Gagal: " . $e->getMessage());
+        }
+        return redirect()->back()->with('message', 'Buku telah berhasil di terbitkan');
+    });
+
 }
 
     public function read($id, $part_id)

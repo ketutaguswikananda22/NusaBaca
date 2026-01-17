@@ -10,7 +10,9 @@ use App\Http\Controllers\RatingController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\GenreController;
+use App\Http\Controllers\AuthorController;
 use App\Events\SystemStatusUpdated;
+use App\Http\Controllers\BookHistoryController;
 use App\Models\Book;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +26,9 @@ use Laravel\Socialite\Facades\Socialite;
 | Public Routes
 |--------------------------------------------------------------------------
 */
+Route::get('author/book-history', [BookHistoryController::class, 'index'])
+    ->middleware(['auth'])
+    ->name('author.book_history');
 
 Route::get('/', function () {
     $recentBooks = Book::with('user')
@@ -43,13 +48,12 @@ Route::get('/', function () {
     ]);
 });
 
-// routes/web.php
 Route::get('/tes-error', function () {
     event(new \App\Events\SystemStatusUpdated([
-        'api' => 'OFFLINE',      // Ini akan merubah API Gateway
-        'operational' => 'DOWN', // Ini akan merubah Operational
-        'db' => 'CRITICAL',      // Ini akan merubah Database
-        'storage' => 'FULL'      // Ini akan merubah S3 Storage
+        'api' => 'OFFLINE',
+        'operational' => 'DOWN',
+        'db' => 'CRITICAL',
+        'storage' => 'FULL'
     ]));
     return "Semua status dikirim!";
 });
@@ -69,9 +73,19 @@ Route::get('/tes-full', function () {
         'api' => 'OPTIMAL',
         'db' => 'HEALTHY',
         'storage' => 'WARNING',
-        'storage_percentage' => 85 // Coba set ke 85%
+        'storage_percentage' => 85
     ]));
     return "Simulasi Storage 85% terkirim!";
+});
+
+// Cek apakah Ziggy dan Laravel mengenali nama rute ini
+Route::get('/debug-route', function () {
+    return [
+        'url_generated' => route('author.book_history'),
+        'all_routes' => collect(Route::getRoutes())->map(function ($r) {
+            return $r->uri();
+        })->contains('author/book-history') ? 'ADA' : 'TIDAK ADA',
+    ];
 });
 
 Route::get('/katalog', [BookController::class, 'katalog'])->name('katalog.index');
@@ -99,7 +113,6 @@ Route::get('/auth/google/callback', function () {
             ]
         );
 
-        // Auto-check writer status
         $isApproved = DB::table('writer_applications')->where('user_id', $user->id)->where('status', 'approved')->exists();
         if ($isApproved && $user->role !== 'admin') {
             $user->update(['role' => 'penulis']);
@@ -121,30 +134,50 @@ Route::get('/auth/google/callback', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // Tambahkan ini di dalam Route::middleware(['auth', 'verified'])
-Route::get('/settings/profile', function() {
-    return redirect()->route('reports.history');
-});
+    // Author/Writer Routes
+    Route::get('/my-works', [App\Http\Controllers\BookController::class, 'myWorks'])
+        ->name('author.books'); 
+
+    // 2. Rute untuk Notifikasi (Riwayat Buku) - Sesuai keinginanmu
+    Route::get('/author/book-history', [App\Http\Controllers\BookHistoryController::class, 'index'])
+        ->name('author.book_history');
+    
+    Route::get('/settings/profile', function() {
+        return redirect()->route('reports.history');
+    });
+
     // --- Notifications System ---
     Route::controller(ProfileController::class)->group(function () {
         Route::get('/notifications', 'notifications')->name('notifications.index');
     });
+    
     Route::get('/history-laporan', [ReportController::class, 'history'])->name('reports.history');
+
+    // Perbaikan Logika Read & Redirect
     Route::post('/notifications/{id}/read', function ($id) {
-    /** @var \App\Models\User $user */
-    $user = Auth::user();
-    $notification = $user->notifications()->findOrFail($id);
-    $notification->markAsRead();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $notification = $user->notifications()->findOrFail($id);
+        $notification->markAsRead();
 
-    $data = $notification->data;
-    $url = $data['url'] ?? '/dashboard';
-    if ($user->role === 'penulis' && (str_contains($url, 'profile') || $data['title'] === 'Peringatan Akun')) {
-        return redirect()->route('reports.history');
-    }
+        $data = $notification->data;
+        $title = $data['title'] ?? '';
+        $url = $data['url'] ?? '/dashboard';
 
-    // Untuk pembaca biasa atau rute selain profil, arahkan normal
-    return redirect($url);
-})->name('notifications.read');
+        // Logika khusus untuk Penulis
+        if ($user->role === 'penulis') {
+            // Jika notifikasi tentang update buku, arahkan ke Riwayat Buku
+            if (str_contains(strtolower($title), 'buku') || str_contains(strtolower($title), 'karya')) {
+                return redirect()->route('author.book_history');
+            }
+            // Jika notifikasi peringatan akun atau ke arah profile, arahkan ke Riwayat Laporan
+            if (str_contains(strtolower($title), 'peringatan') || str_contains($url, 'profile')) {
+                return redirect()->route('reports.history');
+            }
+        }
+
+        return redirect($url);
+    })->name('notifications.read');
 
     Route::post('/notifications/mark-all-read', function () {
         Auth::user()->unreadNotifications->markAsRead();
@@ -160,8 +193,7 @@ Route::get('/settings/profile', function() {
     Route::post('/reports', [ReportController::class, 'store'])->name('reports.user');
 
     // --- Book Management ---
-    Route::get('/karya-saya', [BookController::class, 'myWorks'])->name('author.books');
-    Route::resource('books', BookController::class)->except(['index']); // Menggunakan resource agar lebih rapi
+    Route::resource('books', BookController::class)->except(['index']);
     
     // --- Writing & Social ---
     Route::get('/books/{book}/parts/create', [BookPartController::class, 'create'])->name('parts.create');
@@ -197,7 +229,6 @@ Route::get('/settings/profile', function() {
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
         Route::delete('/reports/{id}', [ReportController::class, 'destroy'])->name('reports.destroy');
         Route::patch('/reports/{id}', [ReportController::class, 'update'])->name('reports.update');
-        
         
         // Moderation
         Route::get('/moderation', [AdminController::class, 'moderationIndex'])->name('moderation');

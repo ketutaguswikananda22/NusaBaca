@@ -61,9 +61,9 @@ export default function BioSection({ user, isEditing, formData, handleChange, jo
 
             {/* LIST BUKU KANAN */}
             <div className="lg:col-span-8">
-                <div className="bg-white rounded-[40px] border border-neutral-100 overflow-hidden shadow-sm">
+                <div className="bg-slate-900 bg-gradient-to-t from-white rounded-[40px] border border-neutral-100 overflow-hidden shadow-sm">
                     <div className="px-8 pt-8 pb-4 border-b border-neutral-50 flex items-center justify-between">
-                        <h3 className="text-lg font-black italic uppercase tracking-tighter text-neutral-800 flex items-center gap-2">
+                        <h3 className="text-lg font-black italic uppercase tracking-tighter text-white flex items-center gap-2">
                             Karya <span className="text-[#ff6122]">Terbit</span>
                         </h3>
                         <span className="bg-[#ff6122]/10 text-[#ff6122] px-4 py-1 rounded-full text-[10px] font-black uppercase">
@@ -74,7 +74,7 @@ export default function BioSection({ user, isEditing, formData, handleChange, jo
                     <div className="divide-y divide-neutral-50">
                         {user.books?.length > 0 ? (
                             user.books.map((book) => (
-                                <div key={book.id} className="group p-8 hover:bg-neutral-50/50 transition-all duration-500">
+                                <div key={book.id} className="group p-8 transition-all duration-500">
                                     <div className="flex flex-col md:flex-row gap-8">
                                         <div className="relative shrink-0 self-center md:self-start">
                                             <div className="w-36 md:w-48 aspect-[2/3] rounded-2xl overflow-hidden shadow-lg group-hover:-translate-y-1 transition-all">
@@ -83,7 +83,7 @@ export default function BioSection({ user, isEditing, formData, handleChange, jo
                                         </div>
                                         <div className="flex flex-col flex-grow">
                                             <Link href={`/books/${book.id}`}>
-                                                <h3 className="text-2xl font-black text-neutral-800 mb-4 group-hover:text-[#ff6122] transition-colors">{book.title}</h3>
+                                                <h3 className="text-2xl font-black text-white mb-4 group-hover:text-[#ff6122] transition-colors">{book.title}</h3>
                                             </Link>
                                             <p className={`text-neutral-500 text-sm mb-4 ${expandedSinopsis[book.id] ? '' : 'line-clamp-3'}`}>{book.description}</p>
                                             {book.description?.length > 150 && (
@@ -93,9 +93,9 @@ export default function BioSection({ user, isEditing, formData, handleChange, jo
                                             )}
                                             <div className="mt-auto flex items-center justify-between pt-4 border-t border-dashed border-neutral-100">
                                                 <div className="flex gap-8">
-                                                    <div className="flex flex-col"><span className="text-[9px] font-black text-neutral-400 uppercase">Reads</span><span className="text-sm font-black">{book.views_count || 0}</span></div>
-                                                    <div className="flex flex-col"><span className="text-[9px] font-black text-neutral-400 uppercase">Rating</span><span className="text-sm font-black">{parseFloat(book.average_rating || 0).toFixed(1)}</span></div>
-                                                    <div className="flex flex-col"><span className="text-[9px] font-black text-neutral-400 uppercase">Part</span><span className="text-sm font-black">{book.parts_count || 0}</span></div>
+                                                    <div className="flex flex-col"><span className="text-[9px] font-black text-neutral-400 uppercase">👁️ Reads</span><span className="text-sm font-black">{book.views_count || 0}</span></div>
+                                                    <div className="flex flex-col"><span className="text-[9px] font-black text-neutral-400 uppercase">⭐ Rating</span><span className="text-sm font-black">{parseFloat(book.average_rating || 0).toFixed(1)}</span></div>
+                                                    <div className="flex flex-col"><span className="text-[9px] font-black text-neutral-400 uppercase">📚 Part</span><span className="text-sm font-black">{book.parts_count || 0}</span></div>
                                                 </div>
                                                 <Link href={`/books/${book.id}`} className="bg-neutral-900 text-white text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-xl hover:bg-[#ff6122] transition-all">Baca</Link>
                                             </div>

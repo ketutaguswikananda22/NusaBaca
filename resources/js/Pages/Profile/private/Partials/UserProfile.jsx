@@ -244,7 +244,7 @@ export default function UserProfile({ user, conversations, stats, isEditing, set
                        
 
                         {!isEditing && (
-                            <div className="flex flex-col items-center"> 
+                            <div className="flex flex-col items-center"> {/* Tambahkan pembungkus col agar poin di bawah */}
                                 <div className="flex gap-4 sm:gap-12 justify-center items-center mb-6">
                                     <div className="text-center">
                                         <p className="text-3xl font-black leading-none">{user.books_count}</p>

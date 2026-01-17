@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
 
 export default function BookHistory({ auth, books = { data: [] } }) {
+    const bookData = Array.isArray(books) ? books : (books.data || []);
     return (
         <AuthenticatedLayout user={auth.user}>
             <Head title="Riwayat Status Buku" />
@@ -26,7 +27,7 @@ export default function BookHistory({ auth, books = { data: [] } }) {
                                 </thead>
                                 <tbody>
                                     {books.length > 0 ? (
-                                        books.map((book) => (
+                                        bookData.map((book) => (
                                             <tr key={book.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
                                                 <td className="p-4">
                                                     <div className="font-semibold text-gray-800">{book.title}</div>

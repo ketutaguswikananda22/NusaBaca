@@ -4,14 +4,17 @@ import { Head, router, Link } from '@inertiajs/react';
 export default function Index({ auth, allNotifications }) {
     
     const handleRead = (n) => {
-        // Jika belum dibaca, kirim post ke server, jika sudah langsung redirect
         if (!n.read_at) {
-            router.post(route('notifications.read', n.id));
+            // Gunakan preserveScroll agar saat klik 'read' posisi scroll tidak balik ke atas
+            router.post(route('notifications.read', n.id), {}, {
+                preserveScroll: true,
+            });
         } else {
-            router.visit(n.data.url || route('dashboard'));
+            // Jika sudah dibaca, pastikan mengarah ke URL di data atau default
+            const targetUrl = n.data.url || route('author.book_history');
+            router.visit(targetUrl);
         }
     };
-
     return (
         <AuthenticatedLayout user={auth.user}>
             <Head title="Kotak Masuk Notifikasi" />

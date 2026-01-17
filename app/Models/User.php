@@ -123,14 +123,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getProfilePhotoUrlAttribute()
     {
         if ($this->avatar) {
-            // Jika avatar diawali http (seperti dari Google/sosmed), pakai langsung
-            // Jika tidak, ambil dari folder storage
             return str_starts_with($this->avatar, 'http') 
                 ? $this->avatar 
                 : asset('storage/' . $this->avatar);
         }
-
-        // Jika tidak ada foto, kirim null agar frontend pakai inisial
         return null;
     }
 }

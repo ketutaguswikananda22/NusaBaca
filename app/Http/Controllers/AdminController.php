@@ -49,6 +49,9 @@ public function index()
     ->map(function ($auth) {
         // Paksa points menjadi integer agar tidak terbaca 0 karena tipe data string
         $auth->points = (int) ($auth->points ?? 0);
+        if ($auth->avatar && !str_starts_with($auth->avatar, 'http')) {
+            $auth->avatar = asset('storage/' . $auth->avatar);
+        }
         return $auth;
     });
     // 3. Statistik Laporan (tetap seperti kode kamu)
