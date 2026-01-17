@@ -11,10 +11,11 @@
 ## 🛠️ Deep Technical Stack
 
 - **Framework Core:** Laravel 11 (PHP 8.2+)
-- **Frontend Bridge:** Inertia.js (Menghubungkan React ke Laravel tanpa API manual)
+- **Frontend Bridge:** Inertia.js (Bridge React-Laravel)
 - **UI Library:** React.js dengan Hooks & Tailwind CSS
 - **State & Data Sharing:** Global Props via `HandleInertiaRequests` middleware
 - **Database:** MySQL dengan Eloquent Relationship (One-to-Many & Polymorphic)
+- **Real-Time:** Laravel Reverb (webSocket) & Laravel Echo
 
 ---
 
@@ -55,7 +56,7 @@ Sistem poin untuk meningkatkan keterlibatan penulis dan pembaca:
 - **Unread Counter:** Sinkronisasi jumlah notifikasi yang belum dibaca antara backend dan frontend melalui global props Inertia.
 
 ### ⚡Real-Time System Integrity & Recet Audit Log 
-Sistem ini mengimplementasikan **WebSocket** untuk memberikan transparansi administratif secara instan tanpa perlu refresh halaman:
+Sistem ini mengimplementasikan **WebSocket & Laravel Echo** untuk memberikan transparansi administratif secara instan tanpa perlu refresh halaman:
 - **Event-Driven:** Menggunakan Laravel Events (`AuditUpdated`) yang mengimplementasikan `ShouldBroadcastNow`.
 - **WebSocket Server:** Ditenagai oleh **Laravel Reverb** untuk pengiriman data yang sangat cepat.
 - **Client Side:** Menggunakan **Laravel Echo** untuk mendengarkan aktivitas moderasi (Approve/Reject) dan memperbarui tabel Audit secara reaktif.
@@ -67,14 +68,9 @@ Sistem ini mengimplementasikan **WebSocket** untuk memberikan transparansi admin
 1. **Clone:** `git clone https://github.com/ketutaguswikananda22/NusaBaca.git`
 2. **Backend Setup:** `composer install` & `php artisan key:generate`
 3. **Frontend Setup:** `npm install && npm run dev`
-4. **Database:** Atur `.env`, lalu jalankan `php artisan migrate --seed`
+4. **Database:** Atur konfigurasi `.env`, lalu jalankan `php artisan migrate --seed` dan `php artisan reverb` untuk fitur real-time
 5. **Serve:** `php artisan serve`
 ---
-
-## Documentation
-<p align="center">
-<img src="Screenshots/documentation.png" width="600" alt="Ddmin Dashboard">
-</p>
 
 
 *Dikembangkan oleh **Ketut Agus Wikananda** sebagai project portofolio Fullstack Development.*

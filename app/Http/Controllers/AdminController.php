@@ -115,7 +115,6 @@ public function index()
 
     public function moderationIndex()
 {
-    // Ambil logika yang sama dengan index() untuk menampilkan buku pending
     $books = Book::with('user')
         ->where('status', 'pending')
         ->latest()
@@ -125,7 +124,10 @@ public function index()
                 'id' => $book->id,
                 'title' => $book->title,
                 'description' => $book->description, 
-                'cover_path' => $book->cover_path ? asset('storage/' . $book->cover_path) : asset('images/default-cover.jpg'),
+                // DIMANA: Pastikan path ini benar dan file-nya ada di public storage
+                'cover_path' => $book->cover_path 
+                    ? asset('storage/' . $book->cover_path) 
+                    : asset('images/default-cover.jpg'), 
                 'user' => [
                     'name' => $book->user->name ?? 'Anonim'
                 ],
@@ -137,7 +139,6 @@ public function index()
         'auth' => ['user' => auth()->user()],
         'auditLogs' => \App\Models\AuditLog::latest()->take(6)->get(),
     ]);
-    
 }
 
     public function storeReport(Request $request)
@@ -171,7 +172,7 @@ public function index()
         ]);
         
         if ($book->user) {
-            $book->user->notify(new \App\Notifications\BookStatusNotification($book, 'rejected'));
+           $book->user->notify(new \App\Notifications\BookStatusNotification($book, 'rejected', $request->reason ?? 'Karya tidak sesuai standar.'));
         }
 
         // Kirim email ke penulis

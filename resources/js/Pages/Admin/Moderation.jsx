@@ -198,9 +198,10 @@ useEffect(() => {
                             {/* Sisi Kiri: Cover Art */}
                             <div className="w-full md:w-5/12 bg-slate-50 p-12 flex items-center justify-center border-r border-slate-100">
                                 <img 
-                                    src={selectedBook.cover_path} 
+                                    src={selectedBook.cover_path} // GUNAKAN cover_path, bukan cover
                                     alt="Cover" 
-                                    className="w-full aspect-[3/4.5] object-cover rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] transition-transform duration-500" 
+                                    className="w-full aspect-[3/4.5] object-cover rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.15)]" 
+                                    onError={(e) => { e.target.src = '/images/default-cover.jpg' }} // Fallback jika link mati
                                 />
                             </div>
 
