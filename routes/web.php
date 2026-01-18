@@ -217,6 +217,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/user/{id}/conversation', 'storeConversation')->name('messages.store');
     });
     
+        Route::delete('/profile/destroy', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
     /*
     |--------------------------------------------------------------------------
     | Admin Routes
