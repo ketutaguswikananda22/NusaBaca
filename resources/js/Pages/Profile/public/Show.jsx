@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link, useForm } from '@inertiajs/react';
 import Swal from 'sweetalert2';
+import UserAvatar from '@/Components/UserAvatar';
+
 
 export default function Show({ auth, author: initialAuthor, books, conversations }) {
 
@@ -93,8 +95,7 @@ export default function Show({ auth, author: initialAuthor, books, conversations
 
     const handleReply = (msg) => {
         setReplyingTo(msg);
-        setData('parent_id', msg.id); // Set parent_id ke ID pesan yang mau dibalas
-        // Scroll otomatis ke kolom input agar user sadar
+        setData('parent_id', msg.id); 
         const element = document.getElementById('message-form');
         element?.scrollIntoView({ behavior: 'smooth' });
     };
@@ -233,13 +234,10 @@ export default function Show({ auth, author: initialAuthor, books, conversations
 
                         <div className="absolute -top-20 left-1/2 -translate-x-1/2">
                             <div className="w-40 h-40 rounded-full border-[8px] border-white shadow-xl overflow-hidden bg-neutral-100">
-                                {author.avatar ? (
-                                    <img src={getStorageUrl(author.avatar)} className="w-full h-full object-cover" alt={author.name} />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-5xl font-bold text-neutral-300">
+                                <UserAvatar user={author} className="w-full h-full" />
+                                <div className="w-full h-full flex items-center justify-center text-5xl font-bold text-neutral-300">
                                         {author.name?.charAt(0)}
                                     </div>
-                                )}
                             </div>
                         </div>
 
@@ -405,8 +403,6 @@ export default function Show({ auth, author: initialAuthor, books, conversations
                                         errors.message ? 'ring-2 ring-red-500' : ''
                                     }`}
                                     placeholder="Ketik sesuatu yang berkesan..."
-                                    // Logika: Jika sedang membalas (parent_id ada), kosongkan kotak atas.
-                                    // Jika tidak membalas (parent_id null), tampilkan data.message
                                     value={data.parent_id === null ? data.message : ''}
                                     onChange={e => {
                                         setData(prev => ({
@@ -445,7 +441,7 @@ export default function Show({ auth, author: initialAuthor, books, conversations
                                     {/* PESAN UTAMA DALAM LIST */}
                                     <div className="p-6 flex gap-4 items-start group">
                                         <div className="w-12 h-12 rounded-2xl bg-orange-100 flex-shrink-0 overflow-hidden shadow-sm">
-                                            <img src={getStorageUrl(msg.user?.avatar)} className="w-full h-full object-cover" alt="" />
+                                           <UserAvatar user={msg.user} className="w-12 h-12 rounded-2xl" />
                                         </div>
                                         <div className="flex-grow">
                                             <div className="flex items-center justify-between mb-1">
@@ -478,7 +474,7 @@ export default function Show({ auth, author: initialAuthor, books, conversations
                                         <div className="px-6 pb-6 ml-12 animate-in slide-in-from-top-2">
                                             <div className="flex gap-3 items-start bg-neutral-50 p-4 rounded-[20px] border border-orange-100">
                                                 <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 border border-neutral-200">
-                                                    <img src={getStorageUrl(auth.user?.avatar)} className="w-full h-full object-cover" alt="" />
+                                                    <UserAvatar user={msg.user} className="w-12 h-12 rounded-2xl" />
                                                 </div>
                                                 <div className="flex-grow">
                                                     <textarea
@@ -519,7 +515,7 @@ export default function Show({ auth, author: initialAuthor, books, conversations
                                                     <div className="absolute -left-6 top-[-24px] bottom-6 border-l-2 border-neutral-200"></div>
                                                     
                                                     <div className="w-9 h-9 rounded-xl bg-white flex-shrink-0 overflow-hidden shadow-sm border border-neutral-100">
-                                                        <img src={getStorageUrl(reply.user?.avatar)} className="w-full h-full object-cover" alt="" />
+                                                       <UserAvatar user={reply.user} className="w-9 h-9 rounded-xl z-10" />
                                                     </div>
                                                     <div className="flex-grow">
                                                         <div className="flex items-center gap-2 mb-1">
@@ -557,7 +553,7 @@ export default function Show({ auth, author: initialAuthor, books, conversations
                                         {author.following?.length > 0 ? author.following.map((user) => (
                                             <Link key={user.id} href={route('profile.public', user.id)} className="flex flex-col items-center group">
                                                 <div className="w-20 h-20 rounded-[25px] overflow-hidden border-4 border-transparent group-hover:border-orange-500 transition-all shadow-md mb-4 bg-neutral-50">
-                                                    <img src={getStorageUrl(user.avatar) || '/default-avatar.png'} className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500" alt={user.name} />
+                                                    <UserAvatar user={user} className="w-20 h-20 rounded-[25px] group-hover:border-orange-500 border-4 border-transparent transition-all" />
                                                 </div>
                                                 <span className="text-xs font-black text-neutral-800 group-hover:text-orange-500 uppercase italic tracking-tighter transition-colors text-center">{user.name}</span>
                                             </Link>

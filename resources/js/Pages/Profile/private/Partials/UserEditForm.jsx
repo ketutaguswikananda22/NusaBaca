@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useForm, Link } from '@inertiajs/react';
+import { useForm, Link, router } from '@inertiajs/react'; // Tambah router untuk delete
+import Swal from 'sweetalert2';
 
 export default function EditProfile({ auth, user }) {
     // Menggunakan useForm dari Inertia untuk handle input dan upload file
@@ -14,6 +15,45 @@ export default function EditProfile({ auth, user }) {
 
     const [previewProfile, setPreviewProfile] = useState(user.profile_photo_url);
     const [previewBanner, setPreviewBanner] = useState(user.banner_url || '/default-banner.jpg');
+
+    // --- FITUR HAPUS AKUN ---
+    const handleDeleteAccount = () => {
+        Swal.fire({
+            title: 'Hapus Akun?',
+            text: "Tindakan ini permanen. Semua data karya dan poinmu akan dihapus selamanya!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Ya, Hapus Akun',
+            cancelButtonText: 'Batal',
+            background: '#1a0b0b',
+            color: '#fff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                router.delete(route('profile.destroy'), {
+                    onSuccess: () => {
+                        Swal.fire({
+                            title: 'Terhapus!',
+                            text: 'Akun kamu telah dihapus.',
+                            icon: 'success',
+                            background: '#1a0b0b',
+                            color: '#fff'
+                        });
+                    },
+                    onError: () => {
+                        Swal.fire({
+                            title: 'Gagal!',
+                            text: 'Gagal menghapus akun. Coba lagi nanti.',
+                            icon: 'error',
+                            background: '#1a0b0b',
+                            color: '#fff'
+                        });
+                    }
+                });
+            }
+        });
+    };
 
     // Handle Perubahan Foto Profil
     const handleProfileChange = (e) => {
@@ -35,20 +75,30 @@ export default function EditProfile({ auth, user }) {
 
     const submit = (e) => {
         e.preventDefault();
-        // Menggunakan POST dengan _method PUT karena Laravel butuh ini untuk upload file via multipart/form-data
         post(route('profile.update'), {
             forceFormData: true,
             preserveScroll: true,
-            onSuccess: () => alert('Profil berhasil diperbarui!'),
+            onSuccess: () => {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Profil berhasil diperbarui!',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    background: '#1a0b0b',
+                    color: '#fff'
+                });
+            },
         });
     };
 
     return (
-        <div className="min-h-screen bg-[#1a0b0b] text-white pb-20">
+        <div className="min-h-screen bg-[#1a0b0b] text-white pb-20 font-sans">
             {/* Header / Top Bar */}
             <div className="flex items-center justify-between p-4 bg-[#1a0b0b] sticky top-0 z-50 border-b border-white/10">
                 <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                     <span className="text-xs font-bold uppercase tracking-widest text-gray-300">Personalization Mode</span>
                 </div>
                 <div className="flex gap-3">
@@ -128,7 +178,7 @@ export default function EditProfile({ auth, user }) {
                         </div>
 
                         {/* Bio Input */}
-                        <div className="mb-2">
+                        <div className="mb-8">
                             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-[3px] mb-2 ml-4">Bio / Tentang Saya</label>
                             <textarea 
                                 value={data.bio}
@@ -137,6 +187,18 @@ export default function EditProfile({ auth, user }) {
                                 placeholder="Tuliskan sesuatu tentang dirimu..."
                             />
                             {errors.bio && <p className="text-red-500 text-xs mt-1 ml-4">{errors.bio}</p>}
+                        </div>
+
+                        {/* --- DANGER ZONE / HAPUS AKUN --- */}
+                        <div className="border-t border-white/10 pt-8 mt-4 text-center">
+                            <p className="text-[10px] font-bold text-red-500/50 uppercase tracking-[3px] mb-4">Zona Berbahaya</p>
+                            <button 
+                                type="button"
+                                onClick={handleDeleteAccount}
+                                className="bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-600/30 transition-all"
+                            >
+                                <i className="fas fa-trash-alt mr-2"></i> Hapus Akun Selamanya
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -216,7 +216,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/profile/unfollow/{user}', 'unfollow')->name('profile.unfollow');
         Route::post('/user/{id}/conversation', 'storeConversation')->name('messages.store');
     });
-
+    
     /*
     |--------------------------------------------------------------------------
     | Admin Routes
