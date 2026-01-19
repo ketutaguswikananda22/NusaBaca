@@ -214,7 +214,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/profile/update-full', 'updateFullProfile')->name('profile.update.full');
         Route::post('/profile/follow/{user}', 'follow')->name('profile.follow');
         Route::post('/profile/unfollow/{user}', 'unfollow')->name('profile.unfollow');
-        Route::post('/user/{id}/conversation', 'storeConversation')->name('messages.store');
+        Route::post('/user/{id}/conversation', [ProfileController::class, 'storeConversation'])->name('profile.messages.store');
     });
     
         Route::delete('/profile/destroy', [ProfileController::class, 'destroy'])->name('profile.destroy');
