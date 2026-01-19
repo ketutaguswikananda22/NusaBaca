@@ -3,6 +3,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link, useForm } from '@inertiajs/react';
 import Swal from 'sweetalert2';
 import UserAvatar from '@/Components/UserAvatar';
+import ReportModal from '../Shared/ReportModal';
 
 
 export default function Show({ auth, author: initialAuthor, books, conversations }) {
@@ -565,58 +566,7 @@ export default function Show({ auth, author: initialAuthor, books, conversations
                             )}
 
                             {/* --- MODAL LAPORAN --- */}
-                            {showReportModal && (
-                                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                                    <div className="bg-white w-full max-w-md rounded-[35px] p-10 shadow-2xl animate-in zoom-in-95 duration-200">
-                                        <h3 className="text-xl font-black text-neutral-800 uppercase italic mb-2">
-                                            Laporkan <span className="text-red-500">Profil</span>
-                                        </h3>
-                                        <p className="text-xs text-neutral-400 font-bold uppercase tracking-widest mb-8">
-                                            Beritahu kami apa yang terjadi pada profil {author.name}
-                                        </p>
-                                                    
-                                        <form onSubmit={handleReportSubmit} className="space-y-4">
-                                            <select 
-                                                className="w-full bg-neutral-50 border-none rounded-2xl p-4 text-xs font-bold uppercase tracking-wider focus:ring-2 focus:ring-red-500/20"
-                                                value={reportData.reason}
-                                                onChange={e => setReportData('reason', e.target.value)}
-                                                required
-                                            >
-                                                <option value="">Pilih Alasan</option>
-                                                <option value="INAPPROIRATE CONTENT">Konten Tidak Pantas</option>
-                                                <option value="HARASSMENT">Pelecehan/Bullying</option>
-                                                <option value="PLAGIARISM">Plagiarism</option>
-                                                <option value="SPAM">Spam</option>
-                                                <option value="IMPERSONATION">Penyamaran Identitas</option>
-                                            </select>
-                                                    
-                                            <textarea 
-                                                className="w-full bg-neutral-50 border-none rounded-3xl p-5 text-sm font-medium focus:ring-2 focus:ring-red-500/20 min-h-[120px]"
-                                                placeholder="Detail tambahan (opsional)..."
-                                                value={reportData.description}
-                                                onChange={e => setReportData('description', e.target.value)}
-                                            />
-                            
-                                            <div className="flex gap-3 pt-4">
-                                                <button 
-                                                    type="button"
-                                                    onClick={() => setShowReportModal(false)}
-                                                    className="flex-1 py-4 text-[10px] bg-neutral-100 rounded-full font-black uppercase tracking-widest text-neutral-400 hover:bg-neutral-200 transition-colors"
-                                                >
-                                                    Batal
-                                                </button>
-                                                <button 
-                                                    type="submit"
-                                                    disabled={reporting}
-                                                    className="flex-1 py-4 text-[10px] bg-red-500 rounded-full font-black uppercase tracking-widest text-white hover:bg-red-600 transition-colors disabled:opacity-50 shadow-lg shadow-red-100"
-                                                >
-                                                    {reporting ? 'MENGIRIM...' : 'KIRIM LAPORAN'}
-                                                </button>
-                                            </div>  
-                                        </form>
-                                    </div>
-                                </div>
-                            )}
+                            <ReportModal isOpen={showReportModal} onClose={() => setShowReportModal(false)} author={author} />
 
                         </div>
                     </div>
