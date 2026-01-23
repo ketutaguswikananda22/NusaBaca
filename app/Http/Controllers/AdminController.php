@@ -88,25 +88,41 @@ class AdminController extends Controller
     }
 
     public function toggleUserStatus($id): RedirectResponse
-    {
-        $user = User::findOrFail($id);
-        $isSuspending = $user->status === 'active';
+{
+    $user = User::findOrFail($id);
+    $isSuspending = $user->status === 'active';
 
-        $user->update([
-            'status' => $isSuspending ? 'suspended' : 'active',
-            'is_banned' => $isSuspending,
-        ]);
+    $user->update([
+        'status' => $isSuspending ? 'suspended' : 'active',
+        'is_banned' => $isSuspending,
+    ]);
 
-        $log = AuditLog::create([
-            'action_name' => $isSuspending ? 'USER SUSPENDED' : 'USER ACTIVE',
-            'details' => "Admin mengubah status {$user->name} menjadi {$user->status}.",
-            'type' => $isSuspending ? 'danger' : 'success',
-        ]);
+    // --- TAMBAHKAN INI: System Behavior Layer (Notification) ---
+    $user->notify(new \App\Notifications\AktivitasNotifikasi([
+        'title'   => $isSuspending ? 'Akun Ditangguhkan' : 'Akun Diaktifkan',
+        'message' => $isSuspending 
+            ? 'Akun Anda telah ditangguhkan karena pelanggaran kebijakan.' 
+            : 'Selamat! Akun Anda telah aktif kembali. Silakan berkarya lagi.',
+        'type'    => $isSuspending ? 'danger' : 'success',
+        'url'     => route('dashboard'),
+    ]));
 
-        broadcast(new AuditUpdated($log));
+    // Audit Log untuk Dashboard Admin (Sudah benar)
+    $log = AuditLog::create([
+        'action_name' => $isSuspending ? 'USER SUSPENDED' : 'USER ACTIVE',
+        'details' => "Admin mengubah status {$user->name} menjadi {$user->status}.",
+        'type' => $isSuspending ? 'danger' : 'success',
+    ]);
 
-        return back()->with('success', "Status {$user->name} diperbarui.");
+    broadcast(new AuditUpdated($log));
+
+    // Gunakan with('error_suspended') jika sedang suspend agar bisa ditangkap di Login Page
+    if ($isSuspending) {
+        return back()->with('error_suspended', 'User berhasil ditangguhkan.');
     }
+
+    return back()->with('success', "Status {$user->name} diperbarui.");
+}
 
     public function rejectBook(Request $request, $id): RedirectResponse
     {

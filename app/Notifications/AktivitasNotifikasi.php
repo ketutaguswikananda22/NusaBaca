@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Route;
 
 class AktivitasNotifikasi extends Notification
 {
@@ -46,13 +47,14 @@ class AktivitasNotifikasi extends Notification
      *
      * @return array<string, mixed>
      */
-    public function toArray($notifiable)
-    {
-        return [
-            'title' => $this->details['title'],
-            'message' => $this->details['message'],
-            'url' => $this->details['url'] ?? route('reports.history'),
-            'type' => $this->details['type'] ?? 'info',
-        ];
-    }
+   public function toArray($notifiable)
+{
+    return [
+        'title' => $this->details['title'],
+        'message' => $this->details['message'],
+        // Gunakan logika pengecekan agar tidak crash
+        'url' => $this->details['url'] ?? (Route::has('reports.history') ? route('reports.history') : route('dashboard')),
+        'type' => $this->details['type'] ?? 'info',
+    ];
+}
 }

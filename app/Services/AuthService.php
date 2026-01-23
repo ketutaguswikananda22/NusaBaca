@@ -40,6 +40,18 @@ class AuthService
             if ($user->wasRecentlyCreated) {
                 event(new UserRegistered($user));
             }
+            if ($user->wasRecentlyCreated) {
+                // 1. Trigger Event (Untuk logic lain seperti kirim email/poin)
+                event(new UserRegistered($user));
+
+                // 2. Kirim Notifikasi Lonceng (System Behavior Layer)
+                $user->notify(new \App\Notifications\AktivitasNotifikasi([
+                    'title' => 'Selamat Datang di NusaBaca!',
+                    'message' => 'Halo ' . $user->name . ', senang melihatmu bergabung. Mulailah menjelajahi katalog kami!',
+                    'type' => 'success',
+                    'url' => route('dashboard'),
+                ]));
+            }
 
             Auth::login($user);
             request()->session()->regenerate();

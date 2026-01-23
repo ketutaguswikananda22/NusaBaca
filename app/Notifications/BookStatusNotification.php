@@ -35,6 +35,7 @@ class BookStatusNotification extends Notification
             'book_id' => $this->book->id,
             'title'   => $this->status === 'approved' ? 'Buku Disetujui!' : 'Buku Ditolak',
             'message' => $this->message ?? "Status buku '{$this->book->title}' telah diperbarui.",
+            'category' => 'buku',
             'status'  => $this->status, // 'approved' atau 'rejected'
             'url'     => route('author.book_history'), 
         ];

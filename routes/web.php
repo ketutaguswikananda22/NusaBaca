@@ -53,6 +53,12 @@ Route::get('/auth/google/callback', function (AuthService $authService) {
 */
 Route::middleware(['auth', 'verified'])->group(function () {
 
+    // Tambahkan route ini di dalam middleware auth
+    Route::get('/notifications/{id}', [ProfileController::class, 'showNotification'])->name('notifications.show');
+    
+    Route::post('/reports', [ReportController::class, 'store'])->name('reports.user');
+    Route::get('/history-laporan', [ReportController::class, 'history'])->name('reports.history');
+
     // --- Writer Application ---
     Route::get('/join-writer', [WriterApplicationController::class, 'index'])->name('writer.join');
     Route::post('/join-writer', [WriterApplicationController::class, 'store'])->name('writer.store');
@@ -88,6 +94,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Dashboard Admin & Moderation
         Route::get('/', [AdminController::class, 'index'])->name('index');
         Route::get('/moderation', [AdminController::class, 'moderationIndex'])->name('moderation');
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        // TAMBAHKAN INI: Memperbaiki error di image_a0482a.png agar tidak muter terus
+        Route::patch('/reports/{id}', [ReportController::class, 'update'])->name('reports.update');
         
         // --- USER MANAGEMENT (SINKRON DENGAN AuthorManagement.jsx) ---
         // Menggunakan PATCH karena di JSX baris 17: router.patch(...)

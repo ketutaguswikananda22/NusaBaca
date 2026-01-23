@@ -46,7 +46,7 @@ class BookController extends Controller
         $cleanPath = 'books/' . $cleanPath;
     }
     else {
-        $cleanPath = 'books/covers' . $cleanPath;
+        $cleanPath = 'books/covers' . $cleanPath;   
     }
 
     return asset('storage/' . $cleanPath);

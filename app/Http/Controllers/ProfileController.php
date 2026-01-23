@@ -31,11 +31,16 @@ class ProfileController extends Controller
     /**
      * Menangani klik notifikasi (Core Layer: Service Pattern)
      */
-    public function markRead($id)
-    {
-        $url = $this->notificationService->markAsReadAndGetRedirect(auth()->user(), $id);
-        return redirect($url);
-    }
+   public function markRead($id)
+{
+    $notification = auth()->user()->notifications()->findOrFail($id);
+    $notification->markAsRead();
+
+    // Mengambil URL dari data JSON notifikasi untuk redirect
+    $url = $notification->data['url'] ?? route('dashboard');
+    
+    return redirect($url);
+}
 
     /**
      * Menampilkan halaman edit profil (Private)
@@ -106,7 +111,7 @@ class ProfileController extends Controller
 
     /**
      * Helper untuk format message (Agar kode edit() tidak kepanjangan)
-     */
+     */ 
     private function formatMessage($msg)
     {
         return [
@@ -246,8 +251,23 @@ class ProfileController extends Controller
 
     public function notifications()
     {
-        return Inertia::render('Notifications/Index', [
-            'allNotifications' => auth()->user()->notifications()->paginate(10)
+        // Mengambil notifikasi dengan paginasi agar tidak berat
+        $notifications = auth()->user()->notifications()->paginate(15);
+
+        return Inertia::render('Profile/Notifications', [
+            'notifications' => $notifications
+        ]);
+    }   
+
+    public function showNotification($id)
+    {
+        $notification = auth()->user()->notifications()->findOrFail($id);
+
+        // Tandai dibaca saat dibuka (seperti buka email di Gmail)
+        $notification->markAsRead();
+
+        return Inertia::render('Profile/NotificationDetail', [
+            'notification' => $notification
         ]);
     }
 }
