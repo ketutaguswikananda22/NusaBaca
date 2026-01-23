@@ -6,8 +6,8 @@ use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Book;
 use App\Models\User;
 use App\Models\Message;
-use App\Models\Genre; // Tambahkan ini agar sistem kenal tabel genre
-use App\Models\AuditLog;
+use App\Models\Genre;
+use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +18,25 @@ use Inertia\Inertia;
 
 class ProfileController extends Controller
 {
+    protected $notificationService;
+
+    /**
+     * Dependency Injection: Memasukkan Service ke dalam Controller
+     */
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
+
+    /**
+     * Menangani klik notifikasi (Core Layer: Service Pattern)
+     */
+    public function markRead($id)
+    {
+        $url = $this->notificationService->markAsReadAndGetRedirect(auth()->user(), $id);
+        return redirect($url);
+    }
+
     /**
      * Menampilkan halaman edit profil (Private)
      */
@@ -25,44 +44,23 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         
+        // 1. Ambil data user beserta relasinya
         $userData = User::with([
             'books' => fn($q) => $q->where('status', 'published')->withCount('parts')->withAvg('ratings', 'rating')->latest(),
             'following', 
             'followers', 
-            'readingLists.books'])->withCount(['books', 'followers', 'following', 'readingLists'])->findOrFail($user->id);
+            'readingLists.books'
+        ])->withCount(['books', 'followers', 'following', 'readingLists'])->findOrFail($user->id);
 
-        
-       // Ambil HANYA pesan utama (parent_id kosong)
-$conversations = Message::where('user_id', $user->id)
-    ->whereNull('parent_id') // <--- WAJIB ADA AGAR TIDAK TERPISAH
-    ->with(['sender', 'replies.sender'])
-    ->latest()
-    ->get()
-    ->map(function ($msg) {
-        return [
-            'id' => $msg->id,
-            'message' => $msg->message,
-            'created_at' => $msg->created_at,
-            'user' => [
-                'name' => $msg->sender->name ?? 'User',
-                'avatar' => $msg->sender->avatar,
-            ],
-            // Pastikan replies ini terisi otomatis dari relasi hasMany di Model
-            'replies' => $msg->replies->map(function ($reply) {
-                return [
-                    'id' => $reply->id,
-                    'message' => $reply->message,
-                    'created_at' => $reply->created_at,
-                    'user' => [
-                        'name' => $reply->sender->name ?? 'User',
-                        'avatar' => $reply->sender->avatar,
-                    ]
-                ];
-            })
-        ];
-    });
+        // 2. Ambil Percakapan
+        $conversations = Message::where('user_id', $user->id)
+            ->whereNull('parent_id')
+            ->with(['sender', 'replies.sender'])
+            ->latest()
+            ->get()
+            ->map(fn($msg) => $this->formatMessage($msg));
 
-        // Mapping path gambar cover buku
+        // 3. Mapping path gambar cover buku
         $userData->books->transform(function ($book) {
             $book->cover_path = $book->cover_path 
                 ? (str_starts_with($book->cover_path, 'http') ? $book->cover_path : asset('storage/' . $book->cover_path)) 
@@ -70,26 +68,26 @@ $conversations = Message::where('user_id', $user->id)
             return $book;
         });
 
-        // Daftar author lain untuk disarankan
+        // 4. Daftar author lain (Saran Follow)
         $authors = User::where('role', '!=', 'admin')
-        ->where('id', '!=', $user->id)
-        ->select('id', 'name', 'email', 'role', 'status', 'avatar', 'points') // <-- Tambahkan 'points'
-        ->addSelect(['last_activity' => DB::table('sessions')
-            ->whereColumn('user_id', 'users.id')
-            ->select('last_activity')
-            ->orderBy('last_activity', 'desc')
-            ->limit(1)
-        ])
-        ->latest()
-        ->get()
-        ->map(function ($author) use ($user) {
-            $author->is_followed = $user->following()->where('following_id', $author->id)->exists();
-            $author->is_online = $author->last_activity && $author->last_activity > now()->subMinutes(5)->getTimestamp();
-            $author->points = (int)($author->points ?? 0); // Pastikan jadi integer
-            return $author;
-        });
+            ->where('id', '!=', $user->id)
+            ->select('id', 'name', 'email', 'role', 'status', 'avatar', 'points')
+            ->addSelect(['last_activity' => DB::table('sessions')
+                ->whereColumn('user_id', 'users.id')
+                ->select('last_activity')
+                ->orderBy('last_activity', 'desc')
+                ->limit(1)
+            ])
+            ->latest()
+            ->get()
+            ->map(function ($author) use ($user) {
+                $author->is_followed = $user->following()->where('following_id', $author->id)->exists();
+                $author->is_online = $author->last_activity && $author->last_activity > now()->subMinutes(5)->getTimestamp();
+                $author->points = (int)($author->points ?? 0);
+                return $author;
+            });
 
-    auth()->user()->touch();
+        auth()->user()->touch();
 
         return Inertia::render('Profile/private/Edit', [
             'userData' => $userData,
@@ -107,8 +105,30 @@ $conversations = Message::where('user_id', $user->id)
     }
 
     /**
-     * Menampilkan profil publik user lain
+     * Helper untuk format message (Agar kode edit() tidak kepanjangan)
      */
+    private function formatMessage($msg)
+    {
+        return [
+            'id' => $msg->id,
+            'message' => $msg->message,
+            'created_at' => $msg->created_at,
+            'user' => [
+                'name' => $msg->sender->name ?? 'User',
+                'avatar' => $msg->sender->avatar,
+            ],
+            'replies' => $msg->replies->map(fn($reply) => [
+                'id' => $reply->id,
+                'message' => $reply->message,
+                'created_at' => $reply->created_at,
+                'user' => [
+                    'name' => $reply->sender->name ?? 'User',
+                    'avatar' => $reply->sender->avatar,
+                ]
+            ])
+        ];
+    }
+
     public function showPublicProfile($id)
     {
         $user = User::with(['books' => fn($q) => $q->where('status', 'published')->withCount('parts')])
@@ -121,34 +141,12 @@ $conversations = Message::where('user_id', $user->id)
         
         $user->is_followed = Auth::check() ? Auth::user()->following()->where('following_id', $id)->exists() : false;
 
-        // Ambil pesan utama beserta balasannya untuk profil publik ini
         $conversations = Message::where('user_id', $user->id)
             ->whereNull('parent_id') 
             ->with(['sender', 'replies.sender'])
             ->latest()
             ->get()
-            ->map(function ($msg) {
-                return [
-                    'id' => $msg->id,
-                    'message' => $msg->message,
-                    'created_at' => $msg->created_at,
-                    'user' => [
-                        'name' => $msg->sender->name ?? 'User',
-                        'avatar' => $msg->sender->avatar,
-                    ],
-                    'replies' => $msg->replies->map(function ($reply) {
-                        return [
-                            'id' => $reply->id,
-                            'message' => $reply->message,
-                            'created_at' => $reply->created_at,
-                            'user' => [
-                                'name' => $reply->sender->name ?? 'User',
-                                'avatar' => $reply->sender->avatar,
-                            ]
-                        ];
-                    })
-                ];
-            });
+            ->map(fn($msg) => $this->formatMessage($msg));
 
         return Inertia::render('Profile/public/Show', [
             'author' => $user,
@@ -157,41 +155,32 @@ $conversations = Message::where('user_id', $user->id)
         ]);
     }
 
-    /**
-     * Menyimpan pesan baru atau balasan
-     */
     public function storeConversation(Request $request, $id)
-{
-    $request->validate([
-        'message' => 'required|string|max:500',
-        'parent_id' => 'nullable|exists:conversations,id'
-    ]);
+    {
+        $request->validate([
+            'message' => 'required|string|max:500',
+            'parent_id' => 'nullable|exists:conversations,id'
+        ]);
 
-    // Berdasarkan struktur tabel di gambar Anda: id, user_id, sender_id, message, parent_id
-    Message::create([
-        'user_id'   => $id,                // Pemilik profil (Wika Nanda)
-        'sender_id' => auth()->id(),       // Orang yang kirim pesan
-        'message'   => $request->message,
-        'parent_id' => $request->parent_id, // Penting agar jadi balasan
-    ]);
+        Message::create([
+            'user_id'   => $id,
+            'sender_id' => auth()->id(),
+            'message'   => $request->message,
+            'parent_id' => $request->parent_id,
+        ]);
 
-    return back();
-}
+        return back();
+    }
 
-    /**
-     * Update data profil
-     */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+   public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $user = $request->user();
 
-        $request->validate([
-            'profile_bg_color' => 'nullable|string|max:7',
-            'profile_bg_image_file' => 'nullable|image|mimes:jpeg,png,jpg|max:3072',
-            'avatar_file' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
-
+        // VALIDASI GANDA DIHAPUS - Sudah otomatis divalidasi oleh ProfileUpdateRequest
+        
         $user->fill($request->validated());
+        
+        // Manual assignment untuk field yang mungkin tidak masuk fillable
         $user->instagram = $request->instagram;
         $user->tiktok = $request->tiktok;
         $user->linkedin = $request->linkedin;
@@ -199,32 +188,26 @@ $conversations = Message::where('user_id', $user->id)
         $user->website = $request->website;
         $user->profile_bg_color = $request->profile_bg_color;
 
-        // Handle Avatar
-        if ($request->remove_avatar == true || $request->hasFile('avatar_file')) {
+        // Handle Avatar logic
+        if ($request->remove_avatar || $request->hasFile('avatar_file')) {
             if ($user->avatar) {
-                $oldAvatarPath = str_replace(['/storage/', 'storage/'], '', $user->avatar);
-                Storage::disk('public')->delete($oldAvatarPath);
+                Storage::disk('public')->delete(str_replace(['/storage/', 'storage/'], '', $user->avatar));
                 $user->avatar = null;
             }
         }
-
         if ($request->hasFile('avatar_file')) {
-            $avatarPath = $request->file('avatar_file')->store('avatars', 'public');
-            $user->avatar = Storage::url($avatarPath);
+            $user->avatar = Storage::url($request->file('avatar_file')->store('avatars', 'public'));
         }
 
-        // Handle Background Image
-        if ($request->remove_profile_bg == true || $request->hasFile('profile_bg_image_file')) {
+        // Handle Background logic
+        if ($request->remove_profile_bg || $request->hasFile('profile_bg_image_file')) {
             if ($user->profile_bg_image) {
-                $oldBgPath = str_replace(['/storage/', 'storage/'], '', $user->profile_bg_image);
-                Storage::disk('public')->delete($oldBgPath);
+                Storage::disk('public')->delete(str_replace(['/storage/', 'storage/'], '', $user->profile_bg_image));
                 $user->profile_bg_image = null;
             }
         }
-
         if ($request->hasFile('profile_bg_image_file')) {
-            $bgPath = $request->file('profile_bg_image_file')->store('profile_bg', 'public');
-            $user->profile_bg_image = Storage::url($bgPath);
+            $user->profile_bg_image = Storage::url($request->file('profile_bg_image_file')->store('profile_bg', 'public'));
         }
 
         if ($user->isDirty('email')) {
@@ -232,7 +215,6 @@ $conversations = Message::where('user_id', $user->id)
         }
 
         $user->save();
-
         return back()->with('status', 'profile-updated');
     }
 
@@ -248,14 +230,12 @@ $conversations = Message::where('user_id', $user->id)
 
     public function unfollow($id)
     {
-        $currentUser = Auth::user();
-        $currentUser->following()->detach($id);
+        Auth::user()->following()->detach($id);
         return back()->with('status', 'unfollowed');
     }
 
     public function destroy(Request $request): RedirectResponse
     {
-        //$request->validate(['password' => ['required', 'current_password']]);
         $user = $request->user();
         Auth::logout();
         $user->delete();

@@ -49,10 +49,6 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(ReadingList::class);
     }
 
-    // App/Models/User.php
-
-    // User yang mengikuti saya (Para Pengikut)
-    // User yang diikuti oleh user ini (Following)
     public function following()
     {
         // Tambahkan 'followers' sebagai parameter kedua (nama tabel)
@@ -61,7 +57,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function followers()
     {
-        // Tambahkan 'followers' sebagai parameter kedua (nama tabel)
         return $this->belongsToMany(User::class, 'followers', 'following_id', 'follower_id');
     }
 
@@ -129,5 +124,10 @@ class User extends Authenticatable implements MustVerifyEmail
                 : asset('storage/' . $this->avatar);
         }
         return null;
+    }
+
+    public function post(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Post::class);
     }
 }

@@ -42,7 +42,7 @@ export default function ReportModal({ isOpen, onClose, author }) {
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
             <div className="bg-white w-full max-w-md rounded-[35px] p-10 shadow-2xl animate-in zoom-in-95 duration-200 text-left">
-                <h3 className="text-xl font-black text-neutral-800 uppercase italic mb-2">
+                <h3 className="text-xl font-black text-neutral-800 uppercase mb-2">
                     Laporkan <span className="text-red-500">Profil</span>
                 </h3>
                 <p className="text-xs text-neutral-400 font-bold uppercase tracking-widest mb-8">

@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; // Tambahkan ini
+use Illuminate\Support\Facades\Auth; 
 use Symfony\Component\HttpFoundation\Response;
 
 class AdminMiddleware
@@ -16,14 +16,12 @@ class AdminMiddleware
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      * @return \Symfony\Component\HttpFoundation\Response
      */
-    public function handle(Request $request, Closure $next): Response // Tambahkan : Response di sini
+    public function handle(Request $request, Closure $next): Response 
     {
-        // Gunakan Auth:: secara eksplisit agar VS Code tidak bingung
         if (Auth::check() && Auth::user()->role === 'admin') {
             return $next($request);
         }
 
-        // Jika bukan admin, arahkan ke dashboard
         return redirect('/dashboard')->with('error', 'Anda tidak memiliki akses ke halaman ini.');
     }
 }

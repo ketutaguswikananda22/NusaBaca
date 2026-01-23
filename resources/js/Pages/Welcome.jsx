@@ -131,6 +131,8 @@ export default function Welcome({ auth, recentBooks }) {
                                 <span>Inertia</span>
                                 <span className="text-gray-600">/</span>
                                 <span>MySQL</span>
+                                <span className="text-gray-600">/</span>
+                                <span>Python</span>
                             </div>
                         </div>
                             
