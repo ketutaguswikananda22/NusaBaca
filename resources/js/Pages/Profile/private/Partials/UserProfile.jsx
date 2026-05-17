@@ -90,7 +90,6 @@ export default function UserProfile({ user, conversations, stats, isEditing, set
         });
     };
 
-    // --- LOGIK HAPUS AKUN ---
     const handleDeleteAccount = () => {
         Swal.fire({
             title: 'Hapus Akun Permanen?',
@@ -159,7 +158,8 @@ export default function UserProfile({ user, conversations, stats, isEditing, set
 
     return (
         <div className="flex flex-col text-[#222] bg-[#F3F3F3] min-h-screen relative font-sans">
-            <div className="min-h-[450px] relative flex flex-col items-center justify-center pt-20 pb-12 overflow-hidden bg-cover bg-center"
+            {/* Bagian Header - Perbaikan: Hapus overflow-hidden agar elemen tidak terpotong */}
+            <div className="min-h-[450px] relative flex flex-col items-center justify-center pt-24 pb-16 bg-cover bg-center"
                 style={{ 
                     backgroundColor: formData.profile_bg_color,
                     backgroundImage: formData.profile_bg_image_preview && formData.profile_bg_image_preview !== 'none' 
@@ -181,7 +181,6 @@ export default function UserProfile({ user, conversations, stats, isEditing, set
                     <div className="absolute top-0 left-0 w-full bg-black/60 p-4 flex justify-between items-center z-50 text-white">
                         <div className="flex items-center gap-4">
                             <span className="text-sm font-bold ml-4">Mode Edit Profil</span>
-                            {/* TOMBOL HAPUS AKUN DI SINI */}
                             <button 
                                 onClick={handleDeleteAccount}
                                 className="bg-red-600/20 hover:bg-red-600 text-red-500 hover:text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider border border-red-600/50 transition-all"
@@ -209,7 +208,8 @@ export default function UserProfile({ user, conversations, stats, isEditing, set
                 )}
 
                 <div className="z-10 flex flex-col items-center w-full max-w-4xl px-6">
-                    <div className="w-40 h-40 rounded-full border-[6px] border-white/20 overflow-hidden shadow-2xl relative mb-8 group/avatar bg-white">
+                    {/* Avatar Container */}
+                    <div className="w-40 h-40 rounded-full border-[6px] border-white/20 overflow-hidden shadow-2xl relative mb-6 group/avatar bg-white shrink-0">
                         <img 
                             src={getAvatarDisplay()} 
                             className="w-full h-full object-cover" 
@@ -234,34 +234,38 @@ export default function UserProfile({ user, conversations, stats, isEditing, set
                         )}
                     </div>
                     
-                    <div className="bg-black/20 backdrop-blur-xl border border-white/10 p-8 rounded-[40px] text-center text-white shadow-2xl w-full max-w-2xl">
+                    {/* INFO BOX - Tempat Poin berada */}
+                    <div className="bg-black/30 backdrop-blur-xl border border-white/10 p-8 rounded-[40px] text-center text-white shadow-2xl w-full max-w-2xl relative">
                         {isEditing ? (
                             <input name="name" value={formData.name} onChange={handleChange} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-3xl font-black text-center w-full focus:outline-none focus:border-[#ff6122]" />
                         ) : (
-                            <h1 className="text-5xl font-black mb-2">{user.name}</h1>
+                            <h1 className="text-5xl font-black mb-1">{user.name}</h1>
                         )}
-                        <p className="text-white/70 text-sm mb-8 mt-2">{user.email}</p>
+                        <p className="text-white/70 text-sm mb-6 mt-1">{user.email}</p>
 
                         {!isEditing && (
-                            <div className="flex flex-col items-center">
+                            <div className="flex flex-col items-center w-full">
+                                {/* Statistik Row */}
                                 <div className="flex gap-4 sm:gap-12 justify-center items-center mb-6">
                                     <div className="text-center">
-                                        <p className="text-3xl font-black leading-none">{user.books_count}</p>
-                                        <p className="text-[10px] uppercase font-bold opacity-60">Karya</p>
+                                        <p className="text-3xl font-black leading-none">{user.books_count || 0}</p>
+                                        <p className="text-[10px] uppercase font-bold opacity-60 mt-1">Karya</p>
                                     </div>
                                     <div className="text-center">
-                                        <p className="text-3xl font-black leading-none">{user.followers_count}</p>
-                                        <p className="text-[10px] uppercase font-bold opacity-60">Pengikut</p>
+                                        <p className="text-3xl font-black leading-none">{user.followers_count || 0}</p>
+                                        <p className="text-[10px] uppercase font-bold opacity-60 mt-1">Pengikut</p>
                                     </div>
                                     <div className="text-center">
-                                        <p className="text-3xl font-black leading-none">{user.following_count}</p>
-                                        <p className="text-[10px] uppercase font-bold opacity-60">Mengikuti</p>
+                                        <p className="text-3xl font-black leading-none">{user.following_count || 0}</p>
+                                        <p className="text-[10px] uppercase font-bold opacity-60 mt-1">Mengikuti</p>
                                     </div>
                                 </div>
-                                <div className="bg-[#ff6122] text-white px-6 py-2 rounded-full shadow-lg flex items-center gap-2 transform hover:scale-105 transition-transform cursor-default">
+
+                                {/* TOMBOL POIN - Perbaikan: Menggunakan data props user langsung */}
+                                <div className="bg-[#ff6122] text-white px-6 py-2.5 rounded-full shadow-lg flex items-center gap-3 transform hover:scale-105 transition-all cursor-default">
                                     <span className="text-lg">⭐</span>
-                                    <span className="text-xl font-black">{user.points ?? 0}</span>
-                                    <span className="text-[10px] font-bold uppercase tracking-widest mt-1">Poin Nusa</span>
+                                    <span className="text-2xl font-black leading-none">{Number(user?.points || 0)}</span>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.15em] mt-0.5">Poin Nusa</span>
                                 </div>
                             </div>
                         )}
@@ -269,6 +273,7 @@ export default function UserProfile({ user, conversations, stats, isEditing, set
                 </div>
             </div>
 
+            {/* Tabs Navigation */}
             <div className="bg-white border-b border-neutral-200 sticky top-0 z-40">
                 <div className="max-w-6xl mx-auto px-6 flex gap-12 text-[11px] font-black uppercase tracking-[0.2em]">
                     {['Perihal', 'Percakapan', 'Pengikut', 'Mengikuti'].map((tab) => (
@@ -277,6 +282,7 @@ export default function UserProfile({ user, conversations, stats, isEditing, set
                 </div>
             </div>
 
+            {/* Tab Content */}
             <div className="max-w-6xl mx-auto w-full py-12 px-6">
                 {activeTab === 'Perihal' && (
                     <BioSection user={user} isEditing={isEditing} formData={formData} handleChange={handleChange} joinDate={joinDate} expandedSinopsis={expandedSinopsis} toggleSinopsis={(e, id) => setExpandedSinopsis(prev => ({ ...prev, [id]: !prev[id] }))} />

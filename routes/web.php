@@ -56,6 +56,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Tambahkan route ini di dalam middleware auth
     Route::get('/notifications/{id}', [ProfileController::class, 'showNotification'])->name('notifications.show');
     
+    Route::resource('parts', BookPartController::class);
+
     Route::post('/reports', [ReportController::class, 'store'])->name('reports.user');
     Route::get('/history-laporan', [ReportController::class, 'history'])->name('reports.history');
 
@@ -99,8 +101,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/reports/{id}', [ReportController::class, 'update'])->name('reports.update');
         
         // --- USER MANAGEMENT (SINKRON DENGAN AuthorManagement.jsx) ---
-        // Menggunakan PATCH karena di JSX baris 17: router.patch(...)
-        // Menggunakan nama 'users.toggle' karena di JSX baris 17: route('admin.users.toggle')
+        
         Route::patch('/users/{id}/toggle', [AdminController::class, 'toggleUserStatus'])->name('users.toggle');
         Route::patch('/users/{id}/unban', [AdminController::class, 'unban'])->name('users.unban');
         

@@ -73,5 +73,5 @@ Sistem ini mengimplementasikan **WebSocket & Laravel Echo** untuk memberikan tra
 ---
 
 
-*Dikembangkan oleh **Ketut Agus Wikananda** sebagai project portofolio Fullstack Development.*
+*Dibuat oleh **Ketut Agus Wikananda** sebagai project portofolio Fullstack Developer.*
 ---

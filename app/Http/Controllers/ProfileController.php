@@ -42,7 +42,7 @@ class ProfileController extends Controller
     return redirect($url);
 }
 
-    /**
+   /**
      * Menampilkan halaman edit profil (Private)
      */
     public function edit(Request $request)
@@ -50,12 +50,17 @@ class ProfileController extends Controller
         $user = $request->user();
         
         // 1. Ambil data user beserta relasinya
+        // PERBAIKAN: Pastikan kita tidak melakukan select terbatas yang tertinggal
         $userData = User::with([
             'books' => fn($q) => $q->where('status', 'published')->withCount('parts')->withAvg('ratings', 'rating')->latest(),
             'following', 
             'followers', 
             'readingLists.books'
-        ])->withCount(['books', 'followers', 'following', 'readingLists'])->findOrFail($user->id);
+        ])->withCount(['books', 'followers', 'following', 'readingLists'])
+          ->findOrFail($user->id);
+
+        // Tambahan Audit: Pastikan points bertipe integer agar tidak 'ngaco' di frontend
+        $userData->points = (int) ($userData->points ?? 0);
 
         // 2. Ambil Percakapan
         $conversations = Message::where('user_id', $user->id)
@@ -74,9 +79,10 @@ class ProfileController extends Controller
         });
 
         // 4. Daftar author lain (Saran Follow)
+        // PERBAIKAN: Pastikan 'points' masuk dalam select
         $authors = User::where('role', '!=', 'admin')
             ->where('id', '!=', $user->id)
-            ->select('id', 'name', 'email', 'role', 'status', 'avatar', 'points')
+            ->select('id', 'name', 'email', 'role', 'status', 'avatar', 'points') // Points sudah ada di sini
             ->addSelect(['last_activity' => DB::table('sessions')
                 ->whereColumn('user_id', 'users.id')
                 ->select('last_activity')
@@ -95,7 +101,7 @@ class ProfileController extends Controller
         auth()->user()->touch();
 
         return Inertia::render('Profile/private/Edit', [
-            'userData' => $userData,
+            'userData' => $userData, // Pastikan di React kamu memakai prop 'userData' atau 'user'
             'conversations' => $conversations,
             'status' => session('status'),
             'authors' => $authors, 
