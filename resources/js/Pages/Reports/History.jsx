@@ -18,7 +18,6 @@ export default function History({ auth, reports = { data: [] } }) {
                             <table className="w-full text-left border-collapse">
                                 <thead className="bg-gray-50 text-gray-600 text-xs uppercase font-semibold">
                                     <tr>
-                                        {/* Nama kolom diubah menjadi lebih umum */}
                                         <th className="px-6 py-4">Objek yang Dilaporkan</th>
                                         <th className="px-6 py-4">Alasan</th>
                                         <th className="px-6 py-4">Status</th>

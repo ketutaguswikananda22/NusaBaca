@@ -10,7 +10,7 @@
 
 ## 🛠️ Deep Technical Stack
 
-- **Framework Core:** Laravel 11 (PHP 8.2+)
+- **Framework Core:** Laravel 12 (PHP 8.5+)
 - **Frontend Bridge:** Inertia.js (Bridge React-Laravel)
 - **UI Library:** React.js dengan Hooks & Tailwind CSS
 - **State & Data Sharing:** Global Props via `HandleInertiaRequests` middleware

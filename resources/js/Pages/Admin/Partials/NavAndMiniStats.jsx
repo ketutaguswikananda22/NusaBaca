@@ -1,4 +1,3 @@
-// Filename: NavAndMiniStats.jsx
 import React from 'react';
 
 const NavAndMiniStats = ({ activeTab, setActiveTab, stats, theme }) => (

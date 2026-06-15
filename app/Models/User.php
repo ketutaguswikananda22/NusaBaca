@@ -27,12 +27,28 @@ class User extends Authenticatable implements MustVerifyEmail
      */
 
     protected $fillable = [
-        'name', 'email','password','avatar', 'bio',
-        'instagram','website','location','gender',
-        'twitter','rating','role','status',
-        'profile_bg_color','profile_bg_image', 'instagram',
-        'tiktok', 'linkedin', 'twitter', 'is_banned',
-        'avatar', 'has_interacted_with_avatar'
+        'name',
+        'email',
+        'password',
+        'google_id',
+        'email_verified_at',
+        'points',
+        'bio',
+        'website',
+        'location',
+        'gender',
+        'rating',
+        'role',
+        'status',
+        'profile_bg_color',
+        'profile_bg_image',
+        'instagram',
+        'tiktok',
+        'linkedin',
+        'twitter',
+        'is_banned',
+        'avatar',
+        'has_interacted_with_avatar'
     ];
 
     protected $appends = [

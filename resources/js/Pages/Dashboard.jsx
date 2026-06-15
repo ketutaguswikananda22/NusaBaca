@@ -47,7 +47,6 @@ export default function Dashboard({ auth, books = [], genres = [] }) {
 
     const dynamicGenres = ['Semua', ...(genres || []).map(g => g.name)];
     
-    // Perbaikan Baris 45: Gunakan Optional Chaining agar tidak crash
     const theme = user?.role === 'admin' ? { accent: 'bg-indigo-600' } : { accent: 'bg-emerald-600' };
 
     return (
@@ -68,7 +67,6 @@ export default function Dashboard({ auth, books = [], genres = [] }) {
                             className="rounded-xl border-slate-200 text-sm focus:ring-indigo-500 w-full md:w-64"
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
-                        {/* Pengecekan role yang lebih aman */}
                         {(isAdmin || user?.role === 'author' || user?.role === 'penulis') && (
                             <Link href={route('books.create')} className={`${theme.accent} text-white px-6 py-2 rounded-xl font-bold text-xs uppercase shadow-lg`}>
                                 + Upload
@@ -138,7 +136,6 @@ export default function Dashboard({ auth, books = [], genres = [] }) {
                                         ))}
                                     </div>
 
-                                    {/* Proteksi tombol edit */}
                                     {(user?.id === book.user_id || isAdmin) && (
                                         <div className="pt-3 border-t border-slate-50 mt-auto">
                                             <Link 

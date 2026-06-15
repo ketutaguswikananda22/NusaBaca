@@ -1,10 +1,19 @@
 <?php
 
 use App\Http\Controllers\{
-    ProfileController, DashboardController, BookController, 
-    LibraryController, WriterApplicationController, BookPartController, 
-    RatingController, ReportController, AdminController, 
-    PostController, GenreController, AuthorController, BookHistoryController
+    ProfileController,
+    DashboardController,
+    BookController,
+    LibraryController,
+    WriterApplicationController,
+    BookPartController,
+    RatingController,
+    ReportController,
+    AdminController,
+    PostController,
+    GenreController,
+    AuthorController,
+    BookHistoryController
 };
 use App\Services\AuthService;
 use App\Models\{Book, User};
@@ -17,6 +26,7 @@ use Laravel\Socialite\Facades\Socialite;
 | Public Routes
 |--------------------------------------------------------------------------
 */
+
 Route::get('/', function () {
     $recentBooks = Book::with('user')->where('status', 'published')->latest()->take(4)->get()
         ->map(function ($book) {
@@ -55,7 +65,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Tambahkan route ini di dalam middleware auth
     Route::get('/notifications/{id}', [ProfileController::class, 'showNotification'])->name('notifications.show');
-    
+
     Route::resource('parts', BookPartController::class);
 
     Route::post('/reports', [ReportController::class, 'store'])->name('reports.user');
@@ -72,6 +82,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/profile', 'destroy')->name('profile.destroy');
         Route::get('/notifications', 'notifications')->name('notifications.index');
         Route::post('/notifications/{id}/read', 'markRead')->name('notifications.read');
+
+        // FIX: Menambahkan route follow yang dicari oleh Show.jsx di frontend
+        // Route untuk Follow & Unfollow
+        Route::post('/profile/{id}/follow', [App\Http\Controllers\ProfileController::class, 'follow'])->name('profile.follow');
+        Route::post('/profile/{id}/unfollow', [App\Http\Controllers\ProfileController::class, 'unfollow'])->name('profile.unfollow');
+        Route::post('/user/{id}/conversation', 'storeConversation')->name('profile.conversation');
     });
 
     Route::post('/notifications/mark-all-read', function () {
@@ -83,13 +99,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [BookController::class, 'index'])->name('dashboard');
     Route::get('/my-works', [BookController::class, 'myWorks'])->name('author.books');
     Route::get('/library', [DashboardController::class, 'library'])->name('library.index');
-    
+    Route::post('/library/toggle/{bookId}', [LibraryController::class, 'toggle'])->name('library.toggle');
+
     Route::resource('books', BookController::class)->except(['index']);
     Route::get('/books/{id}/read/{part_id}', [BookController::class, 'read'])->name('books.read');
 
     /*
     |--------------------------------------------------------------------------
-    | Admin System Layer (Fixed & Synced)
+    | Admin System Layer
     |--------------------------------------------------------------------------
     */
     Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -97,22 +114,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('index');
         Route::get('/moderation', [AdminController::class, 'moderationIndex'])->name('moderation');
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-        // TAMBAHKAN INI: Memperbaiki error di image_a0482a.png agar tidak muter terus
         Route::patch('/reports/{id}', [ReportController::class, 'update'])->name('reports.update');
-        
-        // --- USER MANAGEMENT (SINKRON DENGAN AuthorManagement.jsx) ---
-        
+
+        // --- USER MANAGEMENT ---
         Route::patch('/users/{id}/toggle', [AdminController::class, 'toggleUserStatus'])->name('users.toggle');
         Route::patch('/users/{id}/unban', [AdminController::class, 'unban'])->name('users.unban');
-        
+
         // --- CONTENT MANAGEMENT ---
         Route::post('/books/{id}/reject', [AdminController::class, 'rejectBook'])->name('books.reject');
-        
+
         // --- RESOURCES ---
         Route::resource('genres', GenreController::class);
-        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('/writer-applications', [WriterApplicationController::class, 'adminIndex'])->name('writer.applications');
+        Route::post('/writer-applications/{id}/status', [WriterApplicationController::class, 'updateStatus'])->name('writer.updateStatus');
     });
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

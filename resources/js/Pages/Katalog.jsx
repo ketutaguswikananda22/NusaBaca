@@ -39,7 +39,6 @@ export default function Katalog({ auth, books = [] }) {
                         <p className="text-slate-400 font-medium">Selamat datang di katalog NusaBaca, mau baca buku apa hari ini?</p>
                     </div>
 
-                    {/* Search Bar SEO - Sudah difungsikan */}
                     <form onSubmit={handleSearch} className="relative w-full md:w-96">
                         <input 
                             type="text" 
@@ -54,12 +53,10 @@ export default function Katalog({ auth, books = [] }) {
                     </form>
                 </div>
 
-                {/* Grid Buku - Akan terfilter otomatis dari Server */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8 md:gap-x-6 md:gap-y-10">
                     {books.length > 0 ? (
                         books.map((book) => (
                             <div key={book.id} className="flex flex-col">
-                                {/* PROTEKSI: Klik Cover -> Login (jika belum login) */}
                                 <Link 
                                     href={auth.user ? route('books.show', book.id) : route('register')}
                                     className="relative aspect-[3/4] rounded-3xl overflow-hidden shadow-xl mb-4 group border border-slate-100"
@@ -74,7 +71,6 @@ export default function Katalog({ auth, books = [] }) {
                                             PUBLISHED
                                         </span>
                                     </div>
-                                    {/* Overlay Hover */}
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                         <span className="text-white font-bold text-xs border-2 border-white px-4 py-2 rounded-full uppercase tracking-widest">
                                             {auth.user ? 'Baca Sekarang' : 'Login untuk Baca'}

@@ -4,7 +4,6 @@ import { Head, router, Link } from '@inertiajs/react';
 export default function Notifications({ auth, notifications }) {
     
     const handleNotificationClick = (id) => {
-        // Navigasi internal ke halaman detail (Gmail Style)
         router.get(route('notifications.show', id));
     };
 
@@ -43,7 +42,6 @@ export default function Notifications({ auth, notifications }) {
                                         }`}
                                     >
                                         <div className="flex gap-4 items-center overflow-hidden">
-                                            {/* Indikator Titik Biru untuk pesan baru */}
                                             <div className={`w-2 h-2 rounded-full shrink-0 ${
                                                 !n.read_at ? 'bg-blue-600' : 'bg-transparent'
                                             }`} />

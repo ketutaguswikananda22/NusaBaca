@@ -58,7 +58,6 @@ class AdminController extends Controller
             ->where('created_at', '>=', Carbon::now()->subDays(6))
             ->groupBy('date')->orderBy('date', 'ASC')->get();
 
-        // Trigger System Check via Service
         event(new SystemStatusUpdated($this->systemService->getSystemHealth()));
 
         return Inertia::render('Admin/AdminDashboard', [

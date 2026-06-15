@@ -95,8 +95,14 @@ export default function ProfileHeader({
                     <div className="mt-20 space-y-1">
                         <h1 className="text-4xl font-black text-neutral-800 tracking-tight uppercase">{author.name}</h1>
                         <p className="text-neutral-400 text-sm font-bold tracking-widest uppercase">
-                            @{author.username || author.name?.toLowerCase().replace(/\s+/g, '')}
-                        </p>
+    @ {
+        (author.username && author.username.trim().toLowerCase() !== 'user')
+            ? author.username.trim().toLowerCase()
+            : (author.email && !author.email.toLowerCase().startsWith('user@') 
+                ? author.email.split('@')[0].toLowerCase()
+                : (author.name ? author.name.toLowerCase().replace(/\s+/g, '') : 'anonim'))
+    }
+</p>
                     </div>
 
                     {/* STATS */}

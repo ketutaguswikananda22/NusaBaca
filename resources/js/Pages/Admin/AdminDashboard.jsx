@@ -53,10 +53,8 @@ const [systemStats, setSystemStats] = useState({
 // Listener System Integrity & Recent Audit
 useEffect(() => {
     if (window.Echo) {
-        // Listener untuk Admin Logs
         const channel = window.Echo.channel('admin-logs');            
         channel.listen('.AuditUpdated', (e) => {
-            //console.log('ADA EVENT MASUK:', e);
             setLogs((prevLogs) => {
                 const isExist = prevLogs.some(log => log.id === e.log.id);
                 if (isExist) return prevLogs;
@@ -65,10 +63,8 @@ useEffect(() => {
             });
         });
 
-        // Listener untuk System Status
         const statusChannel = window.Echo.channel('system-status');
         statusChannel.listen('SystemStatusUpdated', (e) => {
-            //console.log('Update Sistem:', e);
             setSystemStats({
                 api: e.api_gateway,
                 operational: e.operational || 'HEALTHY',
@@ -78,7 +74,6 @@ useEffect(() => {
             });
         });
 
-        // CLEANUP: Sangat penting agar tidak dizzy/double listener
         return () => {
             window.Echo.leave('admin-logs');
             window.Echo.leave('system-status');

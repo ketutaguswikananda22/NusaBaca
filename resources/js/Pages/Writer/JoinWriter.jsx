@@ -22,9 +22,7 @@ export default function JoinWriter({ auth, application }) {
         });
     };
 
-    // Fungsi untuk handle klik Oke saat disetujui
     const handleApprovedOk = () => {
-        // Melakukan reload halaman agar menu navigasi berubah sesuai role baru
         window.location.reload();
     };
 

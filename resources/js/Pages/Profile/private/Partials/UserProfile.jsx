@@ -158,7 +158,6 @@ export default function UserProfile({ user, conversations, stats, isEditing, set
 
     return (
         <div className="flex flex-col text-[#222] bg-[#F3F3F3] min-h-screen relative font-sans">
-            {/* Bagian Header - Perbaikan: Hapus overflow-hidden agar elemen tidak terpotong */}
             <div className="min-h-[450px] relative flex flex-col items-center justify-center pt-24 pb-16 bg-cover bg-center"
                 style={{ 
                     backgroundColor: formData.profile_bg_color,
@@ -234,7 +233,6 @@ export default function UserProfile({ user, conversations, stats, isEditing, set
                         )}
                     </div>
                     
-                    {/* INFO BOX - Tempat Poin berada */}
                     <div className="bg-black/30 backdrop-blur-xl border border-white/10 p-8 rounded-[40px] text-center text-white shadow-2xl w-full max-w-2xl relative">
                         {isEditing ? (
                             <input name="name" value={formData.name} onChange={handleChange} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-3xl font-black text-center w-full focus:outline-none focus:border-[#ff6122]" />
@@ -261,7 +259,6 @@ export default function UserProfile({ user, conversations, stats, isEditing, set
                                     </div>
                                 </div>
 
-                                {/* TOMBOL POIN - Perbaikan: Menggunakan data props user langsung */}
                                 <div className="bg-[#ff6122] text-white px-6 py-2.5 rounded-full shadow-lg flex items-center gap-3 transform hover:scale-105 transition-all cursor-default">
                                     <span className="text-lg">⭐</span>
                                     <span className="text-2xl font-black leading-none">{Number(user?.points || 0)}</span>

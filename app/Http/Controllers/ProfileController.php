@@ -48,18 +48,38 @@ class ProfileController extends Controller
     public function edit(Request $request)
     {
         $user = $request->user();
-        
+
         // 1. Ambil data user beserta relasinya
-        // PERBAIKAN: Pastikan kita tidak melakukan select terbatas yang tertinggal
         $userData = User::with([
             'books' => fn($q) => $q->where('status', 'published')->withCount('parts')->withAvg('ratings', 'rating')->latest(),
-            'following', 
-            'followers', 
+            'following',
+            'followers',
             'readingLists.books'
         ])->withCount(['books', 'followers', 'following', 'readingLists'])
-          ->findOrFail($user->id);
+            ->findOrFail($user->id);
 
-        // Tambahan Audit: Pastikan points bertipe integer agar tidak 'ngaco' di frontend
+        // --- FIX: LOGIKA TOMBOL IKUTI/DIIKUTI ---
+        // Ambil kumpulan ID dari orang-orang yang sedang kamu ikuti
+        $followingIds = $userData->following->pluck('id')->toArray();
+
+        // Cek satu-satu untuk tab "Pengikut" (Followers)
+        if ($userData->followers) {
+            $userData->followers->transform(function ($follower) use ($followingIds) {
+                // Jika ID pengikut ada di dalam daftar orang yang kamu ikuti, berarti true
+                $follower->is_followed = in_array($follower->id, $followingIds);
+                return $follower;
+            });
+        }
+
+        // Untuk tab "Mengikuti" (Following), otomatis true karena kamu memang mengikuti mereka
+        if ($userData->following) {
+            $userData->following->transform(function ($followingUser) {
+                $followingUser->is_followed = true;
+                return $followingUser;
+            });
+        }
+        // ----------------------------------------
+
         $userData->points = (int) ($userData->points ?? 0);
 
         // 2. Ambil Percakapan
@@ -72,22 +92,24 @@ class ProfileController extends Controller
 
         // 3. Mapping path gambar cover buku
         $userData->books->transform(function ($book) {
-            $book->cover_path = $book->cover_path 
-                ? (str_starts_with($book->cover_path, 'http') ? $book->cover_path : asset('storage/' . $book->cover_path)) 
+            $book->cover_path = $book->cover_path
+                ? (str_starts_with($book->cover_path, 'http') ? $book->cover_path : asset('storage/' . $book->cover_path))
                 : null;
             return $book;
         });
 
         // 4. Daftar author lain (Saran Follow)
-        // PERBAIKAN: Pastikan 'points' masuk dalam select
+        // FIX NAMA @user: Kalau di database kamu punya kolom 'username', tambahkan di dalam select() di bawah ini. 
+        // Contoh: ->select('id', 'name', 'username', 'email', ...)
         $authors = User::where('role', '!=', 'admin')
             ->where('id', '!=', $user->id)
-            ->select('id', 'name', 'email', 'role', 'status', 'avatar', 'points') // Points sudah ada di sini
-            ->addSelect(['last_activity' => DB::table('sessions')
-                ->whereColumn('user_id', 'users.id')
-                ->select('last_activity')
-                ->orderBy('last_activity', 'desc')
-                ->limit(1)
+            ->select('id', 'name', 'email', 'role', 'status', 'avatar', 'points')
+            ->addSelect([
+                'last_activity' => DB::table('sessions')
+                    ->whereColumn('user_id', 'users.id')
+                    ->select('last_activity')
+                    ->orderBy('last_activity', 'desc')
+                    ->limit(1)
             ])
             ->latest()
             ->get()
@@ -101,15 +123,15 @@ class ProfileController extends Controller
         auth()->user()->touch();
 
         return Inertia::render('Profile/private/Edit', [
-            'userData' => $userData, // Pastikan di React kamu memakai prop 'userData' atau 'user'
+            'userData' => $userData,
             'conversations' => $conversations,
             'status' => session('status'),
-            'authors' => $authors, 
+            'authors' => $authors,
             'genres' => Genre::all(),
             'stats' => [
-                'totalUsers' => (int) User::where('role', '!=', 'admin')->count(), 
+                'totalUsers' => (int) User::where('role', '!=', 'admin')->count(),
                 'totalBooks' => (int) Book::count(),
-                'pendingAuthors' => (int) User::where('role', 'user')->count(), 
+                'pendingAuthors' => (int) User::where('role', 'user')->count(),
             ],
             'auditLogs' => \App\Models\AuditLog::latest()->take(4)->get(),
         ]);
@@ -142,18 +164,40 @@ class ProfileController extends Controller
 
     public function showPublicProfile($id)
     {
-        $user = User::with(['books' => fn($q) => $q->where('status', 'published')->withCount('parts')])
-                    ->withCount(['followers', 'following'])
-                    ->findOrFail($id);
+        // 1. Ambil user yang sedang login saat ini
+        $loggedInUser = Auth::user();
+        $followingIds = $loggedInUser ? $loggedInUser->following()->pluck('id')->toArray() : [];
+
+        // 2. Load data user profil yang dikunjungi BESERTA list followers & following-nya
+        $user = User::with([
+            'books' => fn($q) => $q->where('status', 'published')->withCount('parts'),
+            'followers', // WAJIB: Biar data followers-nya gak kosong!
+            'following'  // WAJIB: Biar data following-nya gak kosong!
+        ])
+            ->withCount(['followers', 'following'])
+            ->findOrFail($id);
 
         if ($user->website) {
             $user->website_display = preg_replace('/(^https?:\/\/)/', '', $user->website);
         }
-        
-        $user->is_followed = Auth::check() ? Auth::user()->following()->where('following_id', $id)->exists() : false;
+
+        // Status apakah user login mem-follow pemilik profil ini
+        $user->is_followed = $loggedInUser ? $loggedInUser->following()->where('following_id', $id)->exists() : false;
+
+        // 3. FIX MASALAH 2: Set status is_followed untuk masing-masing FOLLOWER-nya secara dinamis
+        $user->followers->transform(function ($follower) use ($followingIds) {
+            $follower->is_followed = in_array($follower->id, $followingIds);
+            return $follower;
+        });
+
+        // Set status is_followed untuk masing-masing FOLLOWING-nya
+        $user->following->transform(function ($followingUser) use ($followingIds) {
+            $followingUser->is_followed = in_array($followingUser->id, $followingIds);
+            return $followingUser;
+        });
 
         $conversations = Message::where('user_id', $user->id)
-            ->whereNull('parent_id') 
+            ->whereNull('parent_id')
             ->with(['sender', 'replies.sender'])
             ->latest()
             ->get()

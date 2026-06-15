@@ -13,7 +13,7 @@ export default function Welcome({ auth, recentBooks }) {
                     <h2 className="text-white text-3xl font-black tracking-tighter italic">Nusa<span className="text-[#ff6122]">Baca</span></h2>
                 </div>
                <div className="space-x-4">
-                    {auth?.user ? ( // Tambahkan tanda tanya di sini
+                    {auth?.user ? ( 
                         <Link href={route('dashboard')} className="font-bold hover:text-indigo-400 transition">Dashboard</Link>
                     ) : (
                         <>
@@ -53,7 +53,6 @@ export default function Welcome({ auth, recentBooks }) {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                    {/* Mapping buku dari database*/}
                     {recentBooks && recentBooks.length > 0 ? (
                         recentBooks.map((book) => (
                             <div key={book.id} className="group cursor-pointer">
@@ -74,7 +73,6 @@ export default function Welcome({ auth, recentBooks }) {
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
                             
-                        {/* Bagian 1: Brand & Visi */}
                         <div className="col-span-1 md:col-span-2">
                             <h2 className="text-white text-4xl font-black tracking-tighter mb-4 italic">
                                 Nusa<span className="text-[#ff6122]">Baca</span>.
@@ -85,7 +83,6 @@ export default function Welcome({ auth, recentBooks }) {
                             </p>
                         </div>
                             
-                        {/* Bagian 2: Navigasi Cepat */}
                         <div>
                             <h3 className="text-white text-xs font-bold uppercase tracking-widest mb-6">Navigasi</h3>
                             <ul className="space-y-4 text-sm">
@@ -97,7 +94,6 @@ export default function Welcome({ auth, recentBooks }) {
                             </ul>
                         </div>
                             
-                        {/* Bagian 3: Dukungan & Hukum */}
                         <div>
                             <h3 className="text-white text-xs font-bold uppercase tracking-widest mb-6">Informasi</h3>
                             <ul className="space-y-4 text-sm">
@@ -114,13 +110,11 @@ export default function Welcome({ auth, recentBooks }) {
                             
                     </div>
                             
-                    {/* Bagian Bawah: Copyright & Stack */}
                     <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
                         <div className="text-[11px] font-medium tracking-wide">
                             &copy; 2026 <span className="text-white font-bold italic">NusaBaca</span>. Hak Cipta Dilindungi.
                         </div>
                             
-                        {/* Tech Stack Badge (Opsional, tapi keren untuk portfolio) */}
                         <div className="flex items-center gap-4 text-[10px] uppercase tracking-widest opacity-50">
                             <span>STACK</span>
                             <div className="flex gap-3 text-white font-bold">
@@ -136,7 +130,6 @@ export default function Welcome({ auth, recentBooks }) {
                             </div>
                         </div>
                             
-                        {/* Sosmed */}
                         <div className="flex gap-5 text-lg">
                             <a href="https://www.instagram.com/nusabacaa?igsh=MWoyb3l4bzU4MmFtdw==" className="hover:text-[#ff6122] transition-all"><i className="fab fa-instagram"></i></a>
                             <a href="#" className="hover:text-[#006BFF] transition-all"><i className="fab fa-facebook"></i></a>

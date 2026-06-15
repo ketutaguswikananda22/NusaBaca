@@ -6,9 +6,6 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import axios from 'axios';
 
-// Baris 9 harusnya:
-// axios.defaults.headers.common['ngrok-skip-browser-warning'] = 'any-value';
-
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 createInertiaApp({
